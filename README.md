@@ -6,20 +6,10 @@ optimization task providing user-defined ranking means through an intuitive spat
 
 EcoCharge has been developed by researchers and students at the Data Management Systems Laboratory (DMSL), Department of Computer Science at the University of Cyprus.
 
-#URL: https://imcf.cs.ucy.ac.cy/
-
 Contact: ecocharge@cs.ucy.ac.cy
 
 ### Preface
 EcoCharge, is a novel framework designed to optimize electric vehicle (EV) charging by prioritizing environmentally friendly chargers that maximize renewable energy use and minimize CO2 emissions. It employs a Continuous k-Nearest Neighbor (CkNN) search with Estimated Components to dynamically rank chargers based on factors like travel time, renewable energy availability, and charger occupancy. The EcoCharge algorithm integrates these parameters into an optimization task, presented through a user-friendly spatial application. 
-
-#In case you have any publications resulting from the IMCF platform, please cite the following paper(s):
-
-#- "Green Planning of IoT Home Automation Workflows in Smart Buildings", Soteris Constantinou, Andreas Konstantinides, Panos K. Chrysanthis and Demetrios Zeinalipour-Yazti, ACM Transactions on Internet of Things (TIOT'22), ACM, Vol. 3, Iss. 4, pp. 1--30, New York, NY, USA, DOI: 10.1145/3549549, 2022. Download: https://www.cs.ucy.ac.cy/~dzeina/papers/tiot22-gp.pdf
-
-#- "The IoT Meta-Control Firewall", Soteris Constantinou, Andreas Konstantinidis, Demetrios Zeinalipour-Yazti, Panos K. Chrysanthis, 37th IEEE International Conference on Data Engineering (ICDE '21), IEEE Computer Society, ISBN:, pp. 12 pages, April 19 - April 22, 2021, Chania, Crete, 2021. Download: https://www.cs.ucy.ac.cy/~dzeina/papers/icde21-imcf.pdf
-
-#- "IMCF: The IoT Meta-Control Firewall for Smart Buildings", Soteris Constantinou, Antonis Vasileiou, Andreas Konstantinidis, Panos K. Chrysanthis, Demetrios Zeinalipour-Yazti, 24th International Conference on Extending Database Technology (EDBT '21), OpenProceedings.org, pp. 658--661, March 23 - March 26, 2021, Nicosia, Cyprus, 2021. Download: https://www.cs.ucy.ac.cy/~dzeina/papers/edbt21-imcf-demo.pdf
 
 We hope that you find our EcoCharge useful for your research and innovation activities.  We would like to have your feedback, comments and remarks and of course any experiences and test results from your own experimental setups. Questions and feedback may be sent to ecocharge@cs.ucy.ac.cy
 
