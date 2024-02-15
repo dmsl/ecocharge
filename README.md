@@ -9,13 +9,13 @@ EcoCharge has been developed by researchers and students at the Data Management 
 Contact: ecocharge@cs.ucy.ac.cy
 
 ### Preface
-EcoCharge, is a novel framework designed to optimize electric vehicle (EV) charging by prioritizing environmentally friendly chargers that maximize renewable energy use and minimize CO2 emissions. It employs a Continuous k-Nearest Neighbor (CkNN) search with Estimated Components to dynamically rank chargers based on factors like travel time, renewable energy availability, and charger occupancy. The EcoCharge algorithm integrates these parameters into an optimization task, presented through a user-friendly spatial application. 
+EcoCharge is a novel framework designed to optimize electric vehicle (EV) charging by prioritizing environmentally friendly chargers that maximize renewable energy use and minimize CO2 emissions. It employs a Continuous k-Nearest Neighbor (CkNN) search with Estimated Components to dynamically rank chargers based on factors like travel time, renewable energy availability, and charger occupancy. The EcoCharge algorithm integrates these parameters into an optimization task, presented through a user-friendly spatial application. 
 
 We hope that you find our EcoCharge useful for your research and innovation activities.  We would like to have your feedback, comments and remarks and of course any experiences and test results from your own experimental setups. Questions and feedback may be sent to ecocharge@cs.ucy.ac.cy
 
 Enjoy EcoCharge!
 
-The IMCF Team 
+The EcoCharge Team 
 
 Copyright (c) 2021, Data Management Systems Lab (DMSL), Department of Computer Science
 University of Cyprus.
