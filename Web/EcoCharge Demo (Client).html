@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta tags for character set and viewport -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Title for the webpage -->
+    <title>Origin-Destination Map</title>
+
+    <!-- Stylesheets for Leaflet and Leaflet Routing Machine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+
+    <!-- Styling for the webpage -->
+    <style>
+        /* Resetting default styles and setting background color */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f8f8;
+        }
+
+        /* Styling for the map container */
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            z-index: 1; /* Ensure the map stays above other elements */
+        }
+
+        /* Styling for the input panel */
+        #panel {
+            position: absolute;
+            top: 16%;
+            left: 12%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: #ffffff;
+            border: 1px solid #e1e1e1;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 300px;
+            width: 100%;
+            transition: box-shadow 0.3s ease;
+        }
+
+        /* Hover effect for the input panel */
+        #panel:hover {
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Styling for labels and form elements */
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        /* Styling for text inputs */
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            color: #444;
+            transition: border-color 0.3s ease;
+        }
+
+        /* Hover and focus effect for text inputs */
+        input:hover, input:focus {
+            border-color: #66afe9;
+        }
+
+        /* Styling for the "Show Route" button */
+        button {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 16px;
+        }
+
+        /* Hover effect for the button */
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* To remove the flag in Leaflet control attribution */
+        .leaflet-control-attribution svg {
+            width: 0
+        }
+
+        /* Styling for custom map markers */
+        .custom-marker {
+            background-color: #008000;
+            border: 2px solid #008000;
+            color: #fff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Map container -->
+<div id="map"></div>
+
+<!-- Input panel for origin, destination, and route information -->
+<div id="panel">
+    <label for="origin">Select Origin:</label>
+    <input type="text" id="origin" placeholder="Enter origin address" list="origin-suggestions">
+
+    <label for="destination">Select Destination:</label>
+    <input type="text" id="destination" placeholder="Enter destination address" list="destination-suggestions">
+
+    <!-- Datalists for autocomplete suggestions -->
+    <datalist id="origin-suggestions"></datalist>
+    <datalist id="destination-suggestions"></datalist>
+
+
+    <!-- Button to show the route -->
+    <button onclick="showRoute()" style="margin-bottom: 10px;">Show Route</button>
+    <!--    <button onclick="showRoute()">Show Route</button>-->
+
+    <!-- Button to start the demo -->
+    <button onclick="startDemo()" style="margin-bottom: 10px;">Start Demo</button>
+    <!--   <button onclick="startDemo()">Start Demo</button>-->
+
+
+</div>
+
+<!-- JavaScript libraries for Leaflet and Leaflet Routing Machine -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+<!-- JavaScript code for map functionality and route calculation -->
+<script>
+    // Map initialization and configuration
+    var map = L.map('map').setView([40, -120], 5);
+
+    // Variables for route control and flag
+    var routeControl = null;
+    var routeShown = false;
+
+    // Declare markersList globally
+    const markersList = [];
+
+
+    // Tile layer from OpenStreetMap
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Input elements
+    const originInput = document.getElementById('origin');
+    const destinationInput = document.getElementById('destination');
+
+    // Mapbox access token
+    const mapboxAccessToken = 'pk.eyJ1IjoiZGltaXRyaXMxOTc3IiwiYSI6ImNscmNqYW1tMjB2bTgyam13YmxqeXZjMjYifQ.uy-DqB8KY3gD2zZxaG29Ew';
+
+
+    // Function to show the route on the map
+    function showRoute() {
+        // If the route has already been shown, clear it and reset the flag
+        if (routeShown) {
+            map.removeControl(routeControl);
+            routeShown = false;
+        }
+
+        // Get the coordinates for origin
+        geocode(originInput.value, function (originCoords) {
+            if (!originCoords) {
+                alert('Unable to find coordinates for the origin address.');
+                return;
+            }
+
+            // Get the coordinates for destination
+            geocode(destinationInput.value, function (destinationCoords) {
+                if (!destinationCoords) {
+                    alert('Unable to find coordinates for the destination address.');
+                    return;
+                }
+
+                // Create the routing control with the obtained coordinates
+                routeControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(originCoords[1], originCoords[0]),
+                        L.latLng(destinationCoords[1], destinationCoords[0])
+                    ],
+                    // routeWhileDragging: true,
+                    zIndex: 9999 // Set a higher z-index for the routing control
+                }).addTo(map);
+
+                // Create a custom destination marker with a specific class
+                // const destinationMarker = L.marker(destinationCoords, {icon: L.divIcon({className: 'destination-marker'})});
+
+                // List to keep track of markers
+// markersList.push(destinationMarker);
+
+
+                // Set the flag to indicate that the route has been shown
+                routeShown = true;
+
+                // Adjust the z-index of the panel to be below the route information box
+                document.getElementById("panel").style.zIndex = 1;
+
+                // Send latitude and longitude to Flask server
+                sendCoordinatesToServer(originCoords[1], originCoords[0]);
+            });
+        });
+
+
+    }
+
+
+    function sendCoordinatesToServer(lat, lng) {
+        fetch('http://localhost:5000/origin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({lat: lat, lng: lng}),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+
+                // Remove only markers that are instances of L.Marker and have the class 'custom-marker'
+                map.eachLayer(function (layer) {
+                    if (layer instanceof L.Marker && layer.options.icon.options.className === 'custom-marker') {
+                        map.removeLayer(layer);
+                    }
+                });
+
+                // Add markers for the 5 shortest distances
+                addMarkers(data.five_shortest_distances);
+            })
+            .catch(error => console.error('Error sending coordinates to server:', error));
+    }
+
+
+    // Function to add markers to the map
+    function addMarkers(coordinates) {
+        coordinates.forEach((coord, index) => {
+            // Create a custom marker
+            const marker = L.marker([coord.latitude, coord.longitude], {
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    iconSize: [30, 30],
+                    html: `<div>${index + 1}</div>`, // Show index as marker label
+                }),
+            }).addTo(map);
+
+            // Add a popup with charger information
+            marker.bindPopup(`Charger ID: ${coord.charger_id}<br>Distance: ${coord.distance.toFixed(2)} km`);
+        });
+    }
+
+    // Function to geocode an address and get its coordinates
+    function geocode(address, callback) {
+        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${address}.json?access_token=${mapboxAccessToken}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.features && data.features.length > 0) {
+                    const coordinates = data.features[0].geometry.coordinates;
+                    callback(coordinates);
+                } else {
+                    callback(null);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching Mapbox Geocoding data:', error);
+                callback(null);
+            });
+    }
+
+    // Event listeners for input changes and autocomplete suggestions
+    originInput.addEventListener('input', function () {
+        updateAutocomplete(originInput.value, 'origin');
+    });
+
+    destinationInput.addEventListener('input', function () {
+        updateAutocomplete(destinationInput.value, 'destination');
+    });
+
+    // Function to update autocomplete suggestions based on input
+    function updateAutocomplete(query, inputType) {
+        const suggestionsElement = document.getElementById(`${inputType}-suggestions`);
+
+        // Clear previous suggestions
+        suggestionsElement.innerHTML = '';
+
+        // Fetch Mapbox Geocoding API for suggestions
+        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${mapboxAccessToken}`)
+            .then(response => response.json())
+            .then(data => {
+                const suggestions = data.features.map(feature => feature.place_name);
+
+                // Update suggestions list
+                suggestions.forEach(suggestion => {
+                    const option = document.createElement('option');
+                    option.value = suggestion;
+                    suggestionsElement.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching Mapbox Geocoding data:', error));
+    }
+
+
+    // Variables for interval and distance
+    var interval;
+    var distanceAlongRoute = 0;
+    var routeCoordinates = []; // Array to store coordinates
+
+    // Function to start the demo
+    function startDemo() {
+        // Check if the route is shown
+        if (!routeShown) {
+            alert('Please show the route first.');
+            return;
+        }
+
+        // Remove all markers
+        map.eachLayer(function (layer) {
+            if (layer instanceof L.Marker) {
+                map.removeLayer(layer);
+            }
+        });
+
+// Check if the route control exists and remove it
+        if (routeControl) {
+            map.removeControl(routeControl);
+            routeShown = false; // Reset the flag
+        }
+
+        showRouteNoAddedMarkers();
+
+        // Clear any existing interval
+        clearInterval(interval);
+
+        // // Reset routeCoordinates array
+        // routeCoordinates = [];
+
+        // Reset distance along the route
+        distanceAlongRoute = 0;
+
+        // Set up an interval to fetch coordinates every 5 km
+        interval = setInterval(function () {
+            // Fetch coordinates along the route
+            fetchCoordinatesAlongRoute(distanceAlongRoute);
+
+            // Increment the distance
+            distanceAlongRoute += 5000; // 5 km increment
+
+            // Check if the end of the route is reached
+            if (distanceAlongRoute >= routeControl._routes[0].coordinates.length) {
+                clearInterval(interval); // Stop the interval when the end is reached
+            }
+
+        }, 5000); // Fetch every 5 seconds, you can adjust this interval
+
+
+
+
+
+
+    }
+       // Function to fetch coordinates along the route based on distance
+        function fetchCoordinatesAlongRoute(distance) {
+            // Get the coordinates along the route based on the distance
+            const coordinates = routeControl._routes[0].coordinates[distance];
+
+            // Add coordinates to the routeCoordinates array
+            routeCoordinates.push(coordinates);
+
+            // // Create a marker at the fetched coordinates
+            // const marker = L.marker(coordinates).addTo(map);
+
+            if (routeCoordinates.length === 0) {
+                console.log('No coordinates to send.');
+                return;
+            }
+
+            // Log or use the coordinates as needed
+            // console.log('Coordinates along the route:', coordinates);
+
+            // Log the entire routeCoordinates array for demonstration purposes
+            console.log('All coordinates along the route:', routeCoordinates);
+
+
+            // // Iterate over routeCoordinates and add each location as a marker
+            // routeCoordinates.forEach((location, index) => {
+            //     // Create a marker at the current location
+            //     const marker = L.marker(location).addTo(map);
+            //
+            //     // Add a popup with information (you can customize this part)
+            //     marker.bindPopup(`Marker ${index + 1}`);
+            //
+            //     // If it's the last iteration, send latitude and longitude to Flask server
+            //     if (index === routeCoordinates.length - 1) {
+            //         sendCoordinatesToServer(location.lat, location.lng);
+            //     }
+            // });
+
+
+            map.eachLayer(function (layer) {
+                if (layer instanceof L.Marker && markersList.includes(layer)) {
+                    map.removeLayer(layer);
+                }
+            });
+
+
+// Iterate over routeCoordinates and add the last location as a marker
+            const lastLocation = routeCoordinates[routeCoordinates.length - 1];
+            const marker = L.marker(lastLocation).addTo(map);
+
+// Add a popup with information (you can customize this part)
+            marker.bindPopup(`Marker for the last coordinates`);
+
+            // Add the last marker to the markers list
+            markersList.push(marker);
+
+// Send latitude and longitude to Flask server for the last coordinates
+            sendCoordinatesToServer(lastLocation.lat, lastLocation.lng);
+
+        }
+
+
+    function showRouteNoAddedMarkers() {
+            // If the route has already been shown, clear it and reset the flag
+            if (routeShown) {
+                map.removeControl(routeControl);
+                routeShown = false;
+            }
+
+            // Get the coordinates for origin
+            geocode(originInput.value, function (originCoords) {
+                if (!originCoords) {
+                    alert('Unable to find coordinates for the origin address.');
+                    return;
+                }
+
+                // Get the coordinates for destination
+                geocode(destinationInput.value, function (destinationCoords) {
+                    if (!destinationCoords) {
+                        alert('Unable to find coordinates for the destination address.');
+                        return;
+                    }
+
+                    // Create the routing control with the obtained coordinates
+                    routeControl = L.Routing.control({
+                        waypoints: [
+                            L.latLng(originCoords[1], originCoords[0]),
+                            L.latLng(destinationCoords[1], destinationCoords[0])
+                        ],
+                        // routeWhileDragging: true,
+                        zIndex: 9999 // Set a higher z-index for the routing control
+                    }).addTo(map);
+
+                    // Set the flag to indicate that the route has been shown
+                    routeShown = true;
+
+                    // Adjust the z-index of the panel to be below the route information box
+                    document.getElementById("panel").style.zIndex = 1;
+
+                    // Send latitude and longitude to Flask server
+                    // sendCoordinatesToServer(originCoords[1], originCoords[0]);
+                });
+            });
+        }
+
+
+
+
+</script>
+
+</body>
+</html>
