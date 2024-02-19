@@ -6,6 +6,8 @@ optimization task providing user-defined ranking means through an intuitive spat
 
 EcoCharge has been developed by researchers and students at the Data Management Systems Laboratory (DMSL), Department of Computer Science at the University of Cyprus.
 
+URL: https://ecocharge.cs.ucy.ac.cy/
+
 Contact: ecocharge@cs.ucy.ac.cy
 
 ### Preface
