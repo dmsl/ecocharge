@@ -13,6 +13,11 @@ Contact: ecocharge@cs.ucy.ac.cy
 ### Preface
 EcoCharge is a novel framework designed to optimize electric vehicle (EV) charging by prioritizing environmentally friendly chargers that maximize renewable energy use and minimize CO2 emissions. It employs a Continuous k-Nearest Neighbor (CkNN) search with Estimated Components to dynamically rank chargers based on factors like travel time, renewable energy availability, and charger occupancy. The EcoCharge algorithm integrates these parameters into an optimization task, presented through a user-friendly spatial application. 
 
+In case you have any publications resulting from the EcoCharge platform, please cite the following paper(s):
+
+- "A Framework for Continuous kNN Ranking of Electric Vehicle Chargers with Estimated Components", Soteris Constantinou, Constantinos Costa, Andreas Konstantinidis, Mohamed F. Mokbel, Demetrios Zeinalipour-Yazti, Proceedings of the 40th IEEE International Conference on Data Engineering (ICDE'24), IEEE Press, 13 pages, Utrecht, Netherlands, Apr 16, 2024 - Apr 19, 2024. (accepted).
+
+
 We hope that you find our EcoCharge useful for your research and innovation activities.  We would like to have your feedback, comments and remarks and of course any experiences and test results from your own experimental setups. Questions and feedback may be sent to ecocharge@cs.ucy.ac.cy
 
 Enjoy EcoCharge!
