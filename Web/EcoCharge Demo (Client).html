@@ -1,111 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <!-- Meta tags for character set and viewport -->
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Title for the webpage -->
-    <title>Origin-Destination Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <!-- Stylesheets for Leaflet and Leaflet Routing Machine -->
+    <!-- Google signin client id -->
+    <meta name="google-signin-client_id"
+          content="314654602450-f3dlg26nrl18j2t0g7s6r9as2399kqgk.apps.googleusercontent.com">
+
+    <title>EcoCharge Demo</title>
+
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+    <!-- Leaflet Routing Machine CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
 
-    <!-- Styling for the webpage -->
+    <!-- Leaflet Locate CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css"/>
+
+    <!-- Leaflet Marker Clustering CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
+
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
     <style>
-        /* Resetting default styles and setting background color */
         body {
+            padding: 0;
             margin: 0;
+            height: 100%;
+            width: 100vw;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f8f8;
         }
 
-        /* Styling for the map container */
+        html {
+            height: 100%;
+            width: 100vw;
+        }
+
         #map {
             position: absolute;
+            height: 100%;
+            width: 100vw;
             top: 0;
             bottom: 0;
             right: 0;
             left: 0;
-            z-index: 1; /* Ensure the map stays above other elements */
         }
 
-        /* Styling for the input panel */
-        #panel {
-            position: absolute;
-            top: 16%;
-            left: 12%;
-            transform: translate(-50%, -50%);
-            padding: 20px;
-            background-color: #ffffff;
-            border: 1px solid #e1e1e1;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            max-width: 300px;
-            width: 100%;
-            transition: box-shadow 0.3s ease;
-        }
-
-        /* Hover effect for the input panel */
-        #panel:hover {
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Styling for labels and form elements */
-        label {
-            display: block;
-            margin-bottom: 10px;
-            color: #555;
-            font-size: 14px;
-        }
-
-        /* Styling for text inputs */
-        input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 14px;
-            color: #444;
-            transition: border-color 0.3s ease;
-        }
-
-        /* Hover and focus effect for text inputs */
-        input:hover, input:focus {
-            border-color: #66afe9;
-        }
-
-        /* Styling for the "Show Route" button */
-        button {
-            width: 100%;
-            background-color: #4CAF50;
-            color: white;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            font-size: 16px;
-        }
-
-        /* Hover effect for the button */
-        button:hover {
-            background-color: #45a049;
-        }
-
-        /* To remove the flag in Leaflet control attribution */
+        /* Remove the flag in Leaflet control attribution */
         .leaflet-control-attribution svg {
             width: 0
         }
 
-        /* Styling for custom map markers */
+        /* Nearby chargers */
         .custom-marker {
             background-color: #008000;
-            border: 2px solid #008000;
             color: #fff;
             border-radius: 50%;
             width: 30px;
@@ -115,74 +71,403 @@
             font-weight: bold;
         }
 
+        /* Google Sign-In button */
+        .g-signin2 {
+            z-index: 9999;
+        }
     </style>
+
 </head>
+
 <body>
 
-<!-- Map container -->
+<!-- Leaflet Javascript -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- Leaflet Routing Machine Javascript -->
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+<!-- Leaflet Locate Javascript -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+
+<!-- Leaflet Marker Clustering Javascript -->
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+<!-- Bootstrap 5.3.3 Javascript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+<!-- JQuery 3.7.1 Javascript -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Google Platform Library -->
+<script src="https://apis.google.com/js/platform.js" async defer></script>
+
+<!-- Map -->
 <div id="map"></div>
 
-<!-- Input panel for origin, destination, and route information -->
-<div id="panel">
-    <label for="origin">Select Origin:</label>
-    <input type="text" id="origin" placeholder="Enter origin address" list="origin-suggestions">
+<!--Left panel -->
+<div class="row" id="panel" style="position: absolute; top: 5px; z-index: 9999; width: 20%; left: 5px;
+background-color:#F1F1F1; border-radius: 8px;">
+    <button type="button" class="btn btn-primary" data-bs-toggle="collapse"
+            data-bs-target="#demo">Route Configurations</button>
 
-    <label for="destination">Select Destination:</label>
-    <input type="text" id="destination" placeholder="Enter destination address" list="destination-suggestions">
+    <div class="col-1"></div>
 
-    <!-- Datalists for autocomplete suggestions -->
-    <datalist id="origin-suggestions"></datalist>
-    <datalist id="destination-suggestions"></datalist>
+    <div id="demo" class="col-7 collapse">
+        <br>
 
+        <span>Select City/Country:</span>
+        <br>
+        <select id="chargersLocation" class="form-select" aria-label="Default select example">
+            <option selected value="California">California</option>
+            <option value="Oldenburg">Oldenburg</option>
+            <option value="Cyprus">Cyprus</option>
+            <option value="Beijing">Beijing</option>
+            <option value="All">All</option>
+        </select>
+        <hr>
 
-    <!-- Button to show the route -->
-    <button onclick="showRoute()" style="margin-bottom: 10px;">Show Route</button>
-    <!--    <button onclick="showRoute()">Show Route</button>-->
+        <label for="origin">Select Origin:</label><br>
+        <input type="text" class="form-control" id="origin" placeholder="Enter origin address"
+               list="origin-suggestions">
+        <br>
+        <label for="destination">Select Destination:</label><br>
+        <input type="text" class="form-control" id="destination" placeholder="Enter destination address"
+               list="destination-suggestions">
+        <hr>
 
-    <!-- Button to start the demo -->
-    <button onclick="startDemo()" style="margin-bottom: 10px;">Start Demo</button>
-    <!--   <button onclick="startDemo()">Start Demo</button>-->
+        <!-- Datalists for autocomplete suggestions -->
+        <datalist id="origin-suggestions"></datalist>
+        <datalist id="destination-suggestions"></datalist>
 
+        <span style="">Show All Chargers</span>
+        <label for="checkbox"><input type="checkbox" id="checkbox" unchecked></label>
+        <hr>
+
+        <button type="button" class="btn btn-primary" onclick="showRoute()">Show Route</button>
+        <br><br>
+        <button type="button" class="btn btn-warning" onclick="resetMapView()">Reset View</button>
+        <br><br>
+        <button type="button" class="btn btn-success" onclick="startDemo()">Start Demo</button>
+        <br><br>
+        <button type="button" class="btn btn-success" onclick="togglePauseResume()">Pause/Resume Demo</button>
+        <br><br>
+    </div>
+
+    <div class="col-1"></div>
 
 </div>
 
-<!-- JavaScript libraries for Leaflet and Leaflet Routing Machine -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<!--Right panel -->
+<div class="row" id="panel2" style="position: absolute; top: 5px; z-index: 9999; width: 20%; right: 5px;
+background-color:#F1F1F1; border-radius: 8px;">
+<button type="button" class="btn btn-primary" data-bs-toggle="collapse"
+        data-bs-target="#demo2">User Login/Preferences</button>
 
-<!-- JavaScript code for map functionality and route calculation -->
+    <div class="col-1"></div>
+
+    <div id="demo2" class="col-7 collapse">
+        <br>
+
+        <!-- Google Sign-In button -->
+        <div class="g-signin2" data-onsuccess="onSignIn"></div>
+        <hr>
+
+        <span>Estimated Components:</span>
+		<br>
+        <label for="ec1">Derouting: </label>
+        <span id="range-value1"></span>
+        <span> %</span>
+        <input type="range" id="ec1" name="ec1" min="0" max="100" value="100" class="range-slider"
+               onchange="updateSlider(this.value, 'ec1')"><br>
+
+        <label for="ec2">Availability: </label>
+        <span id="range-value2"></span>
+        <span> %</span>
+        <input type="range" id="ec2" name="ec2" min="0" max="100" value="100" class="range-slider"
+               onchange="updateSlider(this.value, 'ec2')"><br>
+
+        <label for="ec3">Sustainable Charging: </label>
+        <span id="range-value3"></span>
+        <span> %</span>
+        <input type="range" id="ec3" name="ec3" min="0" max="100" value="100" class="range-slider"
+               onchange="updateSlider(this.value, 'ec3')"><br>
+        <hr>
+
+        <label for="radius">Radius: </label>
+        <span id="range-value4"></span>
+        <span> Km</span>
+        <input type="range" id="radius" name="radius" min="0" max="100" value="50" class="range-slider"
+               onchange="updateSlider(this.value, 'radius')"><br>
+		<br>
+
+	</div>
+
+    <div class="col-1"></div>
+
+</div>
+
 <script>
     // Map initialization and configuration
-    var map = L.map('map').setView([40, -120], 5);
+    // Disable zoomControl (topleft by default)
+    var map = L.map('map', {
+        zoomControl: false
+    }).setView([40, -105], 5);
 
-    // Variables for route control and flag
-    var routeControl = null;
-    var routeShown = false;
-
-    // Declare markersList globally
-    const markersList = [];
-
-
-    // Tile layer from OpenStreetMap
-    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // Add map scale
+    L.control.scale({
+        position: "bottomright",
+        maxWidth: 100,
+        metric: true,
+        imperial: true
     }).addTo(map);
 
-    // Input elements
-    const originInput = document.getElementById('origin');
-    const destinationInput = document.getElementById('destination');
+    // Tile layers
+    // https://leaflet-extras.github.io/leaflet-providers/preview/
+    var OpenStreetMap =
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+                attribution: '&copy; ' +
+                    '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+    var OpenTopoMap =
+        L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+            {
+                maxZoom: 17,
+                attribution: 'Map data: &copy; ' +
+                    '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+                    '<a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; ' +
+                    '<a href="https://opentopomap.org">OpenTopoMap</a> ' +
+                    '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+            });
+
+    var Esri_WorldStreetMap =
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+            {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, ' +
+                    'Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+            });
+
+    var Esri_WorldTopoMap =
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+            {
+                attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, ' +
+                    'USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, ' +
+                    'Esri China (Hong Kong), and the GIS User Community'
+            });
+
+    var baseMaps = {
+        "OpenStreetMap": OpenStreetMap,
+        "OpenTopoMap": OpenTopoMap,
+        "Esri_WorldStreetMap": Esri_WorldStreetMap,
+        "Esri_WorldTopoMap": Esri_WorldTopoMap
+    };
+
+    var layersControlOptions = {
+        collapsed: true,
+        position: 'bottomright'
+    };
+
+    var layersControl = L.control.layers(baseMaps, null, layersControlOptions);
+    layersControl.addTo(map);
+
+    // Add zoom control
+    L.control.zoom({
+        position: 'bottomright'
+    }).addTo(map);
+
+    // Show my location
+    L.control
+        .locate({
+            position: "bottomright",
+            showCompass: "true",
+            strings: {
+                title: "Show my location"
+            }
+        })
+        .addTo(map);
 
     // Mapbox access token
-    const mapboxAccessToken = 'pk.eyJ1IjoiZGltaXRyaXMxOTc3IiwiYSI6ImNscmNqYW1tMjB2bTgyam13YmxqeXZjMjYifQ.uy-DqB8KY3gD2zZxaG29Ew';
+    const mapboxAccessToken =
+        'pk.eyJ1IjoiZGltaXRyaXMxOTc3IiwiYSI6ImNscmNqYW1tMjB2bTgyam13YmxqeXZjMjYifQ.uy-DqB8KY3gD2zZxaG29Ew';
 
+
+    // Origin
+    var originInput = document.getElementById('origin');
+
+    // Destination
+    var destinationInput = document.getElementById('destination');
+
+    // Add an event listener to the 'input' event of the origin element
+    originInput.addEventListener('input', function () {
+        updateAutocomplete(originInput.value, 'origin');
+    });
+
+    // Add an event listener to the 'input' event of the destination element
+    destinationInput.addEventListener('input', function () {
+        updateAutocomplete(destinationInput.value, 'destination');
+    });
+
+    // Selected value = City/Country
+    var selected_value = document.getElementById("chargersLocation").value;
+    console.log(selected_value);
+
+    // Radius
+    var radius = parseInt(document.getElementById("radius").value);
+    console.log(radius);
+
+    // Estimated Component: Derouting
+    var slider1 = document.getElementById("ec1");
+    var output1 = document.getElementById("range-value1");
+    output1.innerHTML = slider1.value;
+
+    slider1.oninput = function () {
+        output1.innerHTML = this.value;
+    }
+
+    // Estimated Component: Availability
+    var slider2 = document.getElementById("ec2");
+    var output2 = document.getElementById("range-value2");
+    output2.innerHTML = slider2.value;
+
+    slider2.oninput = function () {
+        output2.innerHTML = this.value;
+    }
+
+    // Estimated Component: Sustainable Charging
+    var slider3 = document.getElementById("ec3");
+    var output3 = document.getElementById("range-value3");
+    output3.innerHTML = slider3.value;
+
+    slider3.oninput = function () {
+        output3.innerHTML = this.value;
+    }
+
+    // Radius
+    var slider4 = document.getElementById("radius");
+    var output4 = document.getElementById("range-value4");
+    output4.innerHTML = slider4.value;
+
+    slider4.oninput = function () {
+        output4.innerHTML = this.value;
+    }
+
+    // Add an event listener to the 'change' event of the chargersLocation element
+    document.getElementById("chargersLocation").addEventListener('change', function () {
+        var selectedValue = this.value;
+        if (selectedValue === "All") {
+            // Set default view when selected value is "All"
+            map.setView([40, -105], 5);
+        } else {
+            // Call the geocode function with the selected value
+            geocode(selectedValue, function (coordinates) {
+                if (coordinates) {
+                    // Set the view of the map to the coordinates obtained from geocoding
+                    map.setView([coordinates[1], coordinates[0]], 8);
+                } else {
+                    console.error('Unable to geocode the selected name.');
+                }
+            });
+        }
+    });
+
+    // Add an event listener to the 'change' event of the checkbox element
+    document.getElementById('checkbox').addEventListener('change', function () {
+        if (this.checked) {
+            // Checkbox is checked, show all chargers
+            showAllChargers();
+        } else {
+            // Checkbox is unchecked
+            clearChargers();
+        }
+    });
+
+    // Make current location as origin address
+    map.on('locationfound', function (e) {
+        // Update the value of the origin input field with the user's current location coordinates
+        const currentLocation = `${e.latlng.lat}, ${e.latlng.lng}`;
+
+        // Call reverse geocoding to get the address of the current location
+        reverseGeocode(e.latlng.lat, e.latlng.lng, function (address) {
+            if (address) {
+                originInput.value = address;
+            } else {
+                originInput.value = currentLocation;
+            }
+        });
+    });
+
+    // Handle errors when getting the user's location
+    map.on('locationerror', function (e) {
+        // Log the error message to the console
+        console.log(e.message);
+    });
+
+    // Event listener to the 'contextmenu' event of the map to open a custom popup on right-click
+    map.on('contextmenu', function (event) {
+        var lat = event.latlng.lat;
+        var lng = event.latlng.lng;
+
+        // Show the custom popup
+        showCustomPopup(lat, lng);
+    });
+
+    // Taxi icon
+    const taxiIcon = L.icon({
+        iconUrl: 'taxi.png',
+        iconSize: [70, 70],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+    });
+
+    // Green marker icon
+    const greenMarkerIcon = L.icon({
+        iconUrl: 'green-marker.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34]
+    });
+
+    // Global variables
+    var origLng, origLat, destLng, destLat; // Longitude and latitude of the origin and destination
+    var routeControl = null; // Control route
+    var routeShown = false; // Track whether the route has been shown on the map
+    var markersList = []; // Store origin, route waypoints and destination
+    var interval, interval1; // Interval variables for periodic tasks
+    var routeCoordinates = [], routeCoordinates1 = []; // Store coordinates of the route waypoints
+    var distanceAlongRoute = 0; // Keep track of distance along the route
+    var increment = 100; // Increment value for distance along the route
+    var timeOfInterval = 2000; // Time interval for intervals in milliseconds
+    var lastAlongRouteLocation = false; // Indicate the last location along the route
+    var isPaused = false; // Indicate whether the demo is paused
 
     // Function to show the route on the map
     function showRoute() {
+        var selected_value = document.getElementById("chargersLocation").value;
+        // console.log(selected_value);
+
+        var radius = parseInt(document.getElementById("radius").value);
+        // console.log(radius);
+
+        var distanceAlongRoute1 = 0;
+        routeCoordinates1 = [];
+
         // If the route has already been shown, clear it and reset the flag
         if (routeShown) {
             map.removeControl(routeControl);
             routeShown = false;
         }
+
+        // Remove only markers having the class 'custom-marker' or TaxiIcon
+        map.eachLayer(function (layer) {
+            if ((layer instanceof L.Marker && layer.options.icon.options.className === 'custom-marker') ||
+                (layer instanceof L.Marker && layer.options.icon === taxiIcon)) {
+                map.removeLayer(layer);
+            }
+        });
 
         // Get the coordinates for origin
         geocode(originInput.value, function (originCoords) {
@@ -198,79 +483,110 @@
                     return;
                 }
 
-                // Create the routing control with the obtained coordinates
+                // TaxiMarker
+                var taxiMarker = L.marker([originCoords[1], originCoords[0]], {
+                    icon: taxiIcon,
+                    draggable: true // Make the marker draggable
+                }).addTo(map);
+
+                // Event listener to update coordinates when marker is dragged
+                taxiMarker.on('dragend', function (event) {
+                    var marker = event.target;
+                    var position = marker.getLatLng();
+                    console.log('New Marker Position:', position);
+                    // Call fetchNearbyChargers function with updated coordinates
+                    fetchNearbyChargers(
+                        position.lat,
+                        position.lng,
+                        slider1.value / 100,
+                        slider2.value / 100,
+                        slider3.value / 100,
+                        selected_value,
+                        radius);
+                });
+
+                // Show an alert on the map instructing the user to move the cab
+                taxiMarker.bindPopup("Drag the cab to find nearby chargers.").openPopup();
+
+                // Create the routing control
                 routeControl = L.Routing.control({
                     waypoints: [
                         L.latLng(originCoords[1], originCoords[0]),
                         L.latLng(destinationCoords[1], destinationCoords[0])
                     ],
-                    // routeWhileDragging: true,
-                    zIndex: 9999 // Set a higher z-index for the routing control
+                    lineOptions: {
+                        styles: [{color: '#1E90FF', weight: 5}] // Change color and width of the route line
+                    },
+                    zIndex: 9999,
+                    createMarker: function (i, waypoint, n) {
+                        var isOrigin = i === 0,
+                            isDestination = i === n - 1;
+
+                        if (isOrigin) {
+                            // Create blue marker for the origin
+                            return L.marker(waypoint.latLng, {
+                                icon: L.icon({
+                                    iconUrl: 'blue-marker.png',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34]
+                                })
+                            });
+                        } else if (isDestination) {
+                            // Create flag marker for the destination
+                            return L.marker(waypoint.latLng, {
+                                icon: L.icon({
+                                    iconUrl: 'flag.jpg',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34]
+                                })
+                            });
+                        }
+                        // Return null for other waypoints
+                        return null;
+                    },
+                    position: 'bottomright'
                 }).addTo(map);
 
-                // Create a custom destination marker with a specific class
-                // const destinationMarker = L.marker(destinationCoords, {icon: L.divIcon({className: 'destination-marker'})});
+                // Get the route's bounds
+                var routeBounds = routeControl.getWaypoints().reduce(function (bounds, waypoint) {
+                    return bounds.extend(waypoint.latLng);
+                }, L.latLngBounds());
 
-                // List to keep track of markers
-// markersList.push(destinationMarker);
+                // Adjust the map's view to fit the route bounds with a specific zoom level
+                map.setView(routeBounds.getCenter(), 10);
 
+                origLng = originCoords[0];
+                console.log('Origin longitude:', origLng);
+
+                origLat = originCoords[1];
+                console.log('Origin latitude:', origLat);
+
+                destLng = destinationCoords[0];
+                console.log('Destination longitude:', destLng);
+
+                destLat = destinationCoords[1];
+                console.log('Destination latitude:', destLat);
 
                 // Set the flag to indicate that the route has been shown
                 routeShown = true;
-
-                // Adjust the z-index of the panel to be below the route information box
-                document.getElementById("panel").style.zIndex = 1;
-
-                // Send latitude and longitude to Flask server
-                sendCoordinatesToServer(originCoords[1], originCoords[0]);
             });
         });
 
+        clearInterval(interval1);
 
-    }
+        // Set up an interval
+        interval1 = setInterval(function () {
+            WriteNodes(distanceAlongRoute1);
+            distanceAlongRoute1 += increment;
 
+            // Check if the end of the route is reached
+            if (distanceAlongRoute1 >= routeControl._routes[0].coordinates.length) {
+                clearInterval(interval1); // Stop the interval when the end is reached
+            }
 
-    function sendCoordinatesToServer(lat, lng) {
-        fetch('http://localhost:5000/origin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({lat: lat, lng: lng}),
-        })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-
-                // Remove only markers that are instances of L.Marker and have the class 'custom-marker'
-                map.eachLayer(function (layer) {
-                    if (layer instanceof L.Marker && layer.options.icon.options.className === 'custom-marker') {
-                        map.removeLayer(layer);
-                    }
-                });
-
-                // Add markers for the 5 shortest distances
-                addMarkers(data.five_shortest_distances);
-            })
-            .catch(error => console.error('Error sending coordinates to server:', error));
-    }
-
-
-    // Function to add markers to the map
-    function addMarkers(coordinates) {
-        coordinates.forEach((coord, index) => {
-            // Create a custom marker
-            const marker = L.marker([coord.latitude, coord.longitude], {
-                icon: L.divIcon({
-                    className: 'custom-marker',
-                    iconSize: [30, 30],
-                    html: `<div>${index + 1}</div>`, // Show index as marker label
-                }),
-            }).addTo(map);
-
-            // Add a popup with charger information
-            marker.bindPopup(`Charger ID: ${coord.charger_id}<br>Distance: ${coord.distance.toFixed(2)} km`);
-        });
+        }, 1); // Every 1 millisecond
     }
 
     // Function to geocode an address and get its coordinates
@@ -290,15 +606,6 @@
                 callback(null);
             });
     }
-
-    // Event listeners for input changes and autocomplete suggestions
-    originInput.addEventListener('input', function () {
-        updateAutocomplete(originInput.value, 'origin');
-    });
-
-    destinationInput.addEventListener('input', function () {
-        updateAutocomplete(destinationInput.value, 'destination');
-    });
 
     // Function to update autocomplete suggestions based on input
     function updateAutocomplete(query, inputType) {
@@ -323,18 +630,155 @@
             .catch(error => console.error('Error fetching Mapbox Geocoding data:', error));
     }
 
+    // Function to write a text file with the nodes
+    function WriteNodes(distance) {
+        // Get the coordinates along the route based on the distance
+        var coordinates = routeControl._routes[0].coordinates[distance];
 
-    // Variables for interval and distance
-    var interval;
-    var distanceAlongRoute = 0;
-    var routeCoordinates = []; // Array to store coordinates
+        // Add coordinates to the routeCoordinates1 array
+        routeCoordinates1.push(coordinates);
+
+        if (routeCoordinates1.length === 0) {
+            console.log('No coordinates to send.');
+            return;
+        }
+
+        console.log('All coordinates along the route:', routeCoordinates1);
+        var nodesList = []
+
+        for (var i = 1; i < routeCoordinates1.length + 1; i++) {
+            nodesList[i] = i + " " + routeCoordinates1[i - 1].lng + " " + routeCoordinates1[i - 1].lat;
+        }
+
+        nodesList[0] = 0 + " " + origLng + " " + origLat
+        nodesList[routeCoordinates1.length + 1] = (routeCoordinates1.length + 1) + " " + destLng + " " + destLat
+
+        console.log('Nodes:', nodesList);
+        sendNodes(nodesList);
+    }
+
+    // Function to send the nodes list
+    function sendNodes(nodesList) {
+        fetch('https://ecocharge-demo.cs.ucy.ac.cy:5000/nodes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({nodesList: nodesList}),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Data:', data);
+            })
+            .catch(error => console.error('Error sending coordinates to server:', error));
+    }
+
+    // Function to fetch nearby chargers
+    function fetchNearbyChargers(lat, lng, derouting_cost, charger_availability, sustainable_charging_level,
+                                 selected_value, radius) {
+
+        fetch('https://ecocharge-demo.cs.ucy.ac.cy:5000/nearby_chargers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                lat: lat,
+                lng: lng,
+                derouting_cost: derouting_cost,
+                charger_availability: charger_availability,
+                sustainable_charging_level: sustainable_charging_level,
+                selected_value: selected_value,
+                radius: radius
+            }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Data:', data);
+
+                // Remove only markers having the class 'custom-marker'
+                map.eachLayer(function (layer) {
+                    if (layer instanceof L.Marker && layer.options.icon.options.className === 'custom-marker') {
+                        map.removeLayer(layer);
+                    }
+                });
+
+                // Add markers for the nearby chargers
+                addMarkers(data.nearby_chargers);
+            })
+            .catch(error => console.error('Error sending coordinates to server:', error));
+    }
+
+
+    // Function to add markers to the map
+    function addMarkers(chargersData) {
+        console.log('Chargers Data:', chargersData);
+        chargersData.forEach((chargersGroup, outerIndex) => {
+            chargersGroup.forEach((charger, innerIndex) => {
+                const latitude = charger[0];
+                const longitude = charger[1];
+                const chargerKW = charger[2];
+                const energyKWHmin = charger[3];
+                const energyKWHmax = charger[4];
+                const availabilityMIN = charger[5];
+                const availabilityMAX = charger[6];
+                const name = charger[7];
+                const ecoChargeScore = charger[8];
+                const minsToArrive = charger[9];
+                const availability = charger[10];
+                const chargingLevel = charger[11];
+                const derouting = charger[12];
+                const distance = charger[13];
+
+                const marker = L.marker([latitude, longitude], {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        iconSize: [30, 30],
+                        html: `<div>${outerIndex * 5 + innerIndex + 1}</div>`, // Show an index for each charger
+                    }),
+                }).addTo(map);
+
+                // Add a popup with charger information
+                marker.bindPopup(`
+                Name: ${name}<br>
+                <hr>
+                Latitude: ${latitude.toFixed(4)}<br>
+                Longitude: ${longitude.toFixed(4)}<br>
+                <hr>
+                Kilowatts: ${chargerKW}<br>
+                <hr>
+                EcoCharge Score: ${ecoChargeScore.toFixed(2)}<br>
+                <hr>
+                Availability: ${availability}<br>
+                Charging Level: ${chargingLevel.toFixed(2)}<br>
+                Derouting: ${derouting.toFixed(2)}<br>
+                <hr>
+                Distance: ${distance.toFixed(2)} km<br>`)
+            });
+        });
+    }
 
     // Function to start the demo
     function startDemo() {
+        var selected_value = document.getElementById("chargersLocation").value;
+        console.log(selected_value);
+
+        var radius = parseInt(document.getElementById("radius").value);
+        console.log(radius);
+
+        distanceAlongRoute = 0;
+        routeCoordinates = [];
+
         // Check if the route is shown
         if (!routeShown) {
             alert('Please show the route first.');
             return;
+        }
+
+        // Check if the route control exists and remove it
+        if (routeControl) {
+            map.removeControl(routeControl);
+            routeShown = false; // Reset the flag
         }
 
         // Remove all markers
@@ -344,152 +788,355 @@
             }
         });
 
-// Check if the route control exists and remove it
-        if (routeControl) {
-            map.removeControl(routeControl);
-            routeShown = false; // Reset the flag
-        }
+        showChargersNearbyOrigin();
 
-        showRouteNoAddedMarkers();
-
-        // Clear any existing interval
         clearInterval(interval);
 
-        // // Reset routeCoordinates array
-        // routeCoordinates = [];
-
-        // Reset distance along the route
-        distanceAlongRoute = 0;
-
-        // Set up an interval to fetch coordinates every 5 km
+        // Set up an interval
         interval = setInterval(function () {
-            // Fetch coordinates along the route
-            fetchCoordinatesAlongRoute(distanceAlongRoute);
+            // Check if the demo is not paused
+            if (!isPaused) {
+                // Fetch coordinates along the route
+                showChargersNearbyWaypointsAndDestination(distanceAlongRoute);
 
-            // Increment the distance
-            distanceAlongRoute += 5000; // 5 km increment
+                // Increment the distance
+                distanceAlongRoute += increment;
 
-            // Check if the end of the route is reached
-            if (distanceAlongRoute >= routeControl._routes[0].coordinates.length) {
-                clearInterval(interval); // Stop the interval when the end is reached
+                // Check if the end of the route is reached
+                if (distanceAlongRoute >= routeControl._routes[0].coordinates.length) {
+                    clearInterval(interval); // Stop the interval when the end is reached
+                }
             }
-
-        }, 5000); // Fetch every 5 seconds, you can adjust this interval
-
-
-
-
-
-
+        }, timeOfInterval);
     }
-       // Function to fetch coordinates along the route based on distance
-        function fetchCoordinatesAlongRoute(distance) {
-            // Get the coordinates along the route based on the distance
-            const coordinates = routeControl._routes[0].coordinates[distance];
 
-            // Add coordinates to the routeCoordinates array
-            routeCoordinates.push(coordinates);
+    // Function to pause or resume the demo
+    function togglePauseResume() {
+        // Check if the route is shown
+        if (!routeShown) {
+            alert('Please show the route first.');
+            return;
+        }
 
-            // // Create a marker at the fetched coordinates
-            // const marker = L.marker(coordinates).addTo(map);
+        isPaused = !isPaused;
 
-            if (routeCoordinates.length === 0) {
-                console.log('No coordinates to send.');
+        if (isPaused) {
+            clearInterval(interval);
+        } else {
+            clearInterval(interval);
+
+            // Set up an interval
+            interval = setInterval(function () {
+                if (!isPaused) {
+                    showChargersNearbyWaypointsAndDestination(distanceAlongRoute);
+                    distanceAlongRoute += increment;
+
+                    // Check if the end of the route is reached
+                    if (distanceAlongRoute >= routeControl._routes[0].coordinates.length) {
+                        clearInterval(interval); // Stop the interval when the end is reached
+                    }
+                }
+            }, timeOfInterval);
+        }
+    }
+
+    // Function to show chargers nearby route waypoints and destination
+    function showChargersNearbyWaypointsAndDestination(distance) {
+        var selected_value = document.getElementById("chargersLocation").value;
+        // console.log(selected_value);
+
+        var radius = parseInt(document.getElementById("radius").value);
+        // console.log(radius);
+
+        // Last along-route location
+        if (distance === ((routeCoordinates1.length - 1) * increment)) {
+            lastAlongRouteLocation = true;
+            console.log('Last along-route location');
+        }
+
+        // Get the coordinates along the route based on the distance
+        const coordinates = routeControl._routes[0].coordinates[distance];
+
+        // Add coordinates to the routeCoordinates array
+        routeCoordinates.push(coordinates);
+
+        if (routeCoordinates.length === 0) {
+            console.log('No coordinates to send.');
+            return;
+        }
+
+        console.log('All coordinates along the route:', routeCoordinates);
+
+        // Remove only route waypoints including origin and destination
+        map.eachLayer(function (layer) {
+            if (layer instanceof L.Marker && markersList.includes(layer)) {
+                map.removeLayer(layer);
+            }
+        });
+
+        // Iterate over routeCoordinates and add the last location as a marker
+        const lastLocation = routeCoordinates[routeCoordinates.length - 1];
+        console.log('Last location:', lastLocation);
+
+        const marker = L.marker(lastLocation, {icon: taxiIcon}).addTo(map);
+
+        // Add the last marker to the markers list
+        markersList.push(marker);
+
+        console.log('Estimated Components:', slider1.value / 100, slider2.value / 100, slider3.value / 100);
+
+        fetchNearbyChargers(
+            lastLocation.lat,
+            lastLocation.lng,
+            slider1.value / 100,
+            slider2.value / 100,
+            slider3.value / 100,
+            selected_value,
+            radius
+        );
+
+        // Last along-route location
+        if (lastAlongRouteLocation) {
+            const marker1 = L.marker([destLat, destLng], {icon: taxiIcon}).addTo(map);
+            // Add the destination to the markers list
+            markersList.push(marker1);
+
+            fetchNearbyChargers(
+                destLat,
+                destLng,
+                slider1.value / 100,
+                slider2.value / 100,
+                slider3.value / 100,
+                selected_value,
+                radius);
+
+            console.log('Chargers around destination');
+            lastAlongRouteLocation = false;
+            marker.remove();
+        }
+    }
+
+    // Function to show all chargers
+    function showAllChargers() {
+        var selected_value = document.getElementById("chargersLocation").value;
+
+        fetch('https://ecocharge-demo.cs.ucy.ac.cy:5000/chargers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({selected_value: selected_value}),
+        })
+            .then(response => response.json())
+            .then(chargers => {
+                var markerCluster = L.markerClusterGroup(); // Create a marker cluster group
+
+                chargers.forEach(charger => {
+                    var marker = L.marker([charger.latitude, charger.longitude], {icon: greenMarkerIcon})
+                        .bindPopup(charger.name);
+                    markerCluster.addLayer(marker); // Add marker to the cluster group
+                });
+
+                map.addLayer(markerCluster); // Add the marker cluster group to the map
+            })
+            .catch((error) => console.error('Error:', error));
+    }
+
+    // Function to clear all chargers
+    function clearChargers() {
+        // Iterate through all layers on the map
+        map.eachLayer(function (layer) {
+            // Check if the layer is a marker cluster group
+            if (layer instanceof L.MarkerClusterGroup) {
+                layer.eachLayer(function (marker) {
+                    // Check if the marker's icon matches greenMarkerIcon
+                    if (marker.options.icon.options.iconUrl === greenMarkerIcon.options.iconUrl) {
+                        layer.removeLayer(marker);
+                    }
+                });
+            }
+        });
+    }
+
+    // Function to show chargers nearby origin
+    function showChargersNearbyOrigin() {
+        var selected_value = document.getElementById("chargersLocation").value;
+        console.log(selected_value);
+
+        // Get the coordinates for origin
+        geocode(originInput.value, function (originCoords) {
+            if (!originCoords) {
+                alert('Unable to find coordinates for the origin address.');
                 return;
             }
 
-            // Log or use the coordinates as needed
-            // console.log('Coordinates along the route:', coordinates);
-
-            // Log the entire routeCoordinates array for demonstration purposes
-            console.log('All coordinates along the route:', routeCoordinates);
-
-
-            // // Iterate over routeCoordinates and add each location as a marker
-            // routeCoordinates.forEach((location, index) => {
-            //     // Create a marker at the current location
-            //     const marker = L.marker(location).addTo(map);
-            //
-            //     // Add a popup with information (you can customize this part)
-            //     marker.bindPopup(`Marker ${index + 1}`);
-            //
-            //     // If it's the last iteration, send latitude and longitude to Flask server
-            //     if (index === routeCoordinates.length - 1) {
-            //         sendCoordinatesToServer(location.lat, location.lng);
-            //     }
-            // });
-
-
-            map.eachLayer(function (layer) {
-                if (layer instanceof L.Marker && markersList.includes(layer)) {
-                    map.removeLayer(layer);
-                }
-            });
-
-
-// Iterate over routeCoordinates and add the last location as a marker
-            const lastLocation = routeCoordinates[routeCoordinates.length - 1];
-            const marker = L.marker(lastLocation).addTo(map);
-
-// Add a popup with information (you can customize this part)
-            marker.bindPopup(`Marker for the last coordinates`);
-
-            // Add the last marker to the markers list
-            markersList.push(marker);
-
-// Send latitude and longitude to Flask server for the last coordinates
-            sendCoordinatesToServer(lastLocation.lat, lastLocation.lng);
-
-        }
-
-
-    function showRouteNoAddedMarkers() {
-            // If the route has already been shown, clear it and reset the flag
-            if (routeShown) {
-                map.removeControl(routeControl);
-                routeShown = false;
-            }
-
-            // Get the coordinates for origin
-            geocode(originInput.value, function (originCoords) {
-                if (!originCoords) {
-                    alert('Unable to find coordinates for the origin address.');
+            // Get the coordinates for destination
+            geocode(destinationInput.value, function (destinationCoords) {
+                if (!destinationCoords) {
+                    alert('Unable to find coordinates for the destination address.');
                     return;
                 }
 
-                // Get the coordinates for destination
-                geocode(destinationInput.value, function (destinationCoords) {
-                    if (!destinationCoords) {
-                        alert('Unable to find coordinates for the destination address.');
-                        return;
-                    }
+                // Create the routing control
+                routeControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(originCoords[1], originCoords[0]),
+                        L.latLng(destinationCoords[1], destinationCoords[0])
+                    ],
+                    lineOptions: {
+                        styles: [{color: '#1E90FF', weight: 5}] // Change color and width of the route line
+                    },
+                    zIndex: 9999,
+                    createMarker: function (i, waypoint, n) {
+                        var isOrigin = i === 0,
+                            isDestination = i === n - 1;
 
-                    // Create the routing control with the obtained coordinates
-                    routeControl = L.Routing.control({
-                        waypoints: [
-                            L.latLng(originCoords[1], originCoords[0]),
-                            L.latLng(destinationCoords[1], destinationCoords[0])
-                        ],
-                        // routeWhileDragging: true,
-                        zIndex: 9999 // Set a higher z-index for the routing control
-                    }).addTo(map);
+                        if (isOrigin) {
+                            // Create blue marker for the origin
+                            return L.marker(waypoint.latLng, {
+                                icon: L.icon({
+                                    iconUrl: 'blue-marker.png',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34]
+                                })
+                            });
+                        } else if (isDestination) {
+                            // Create flag marker for the destination
+                            return L.marker(waypoint.latLng, {
+                                icon: L.icon({
+                                    iconUrl: 'flag.jpg',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34]
+                                })
+                            });
+                        }
+                        // Return null for other waypoints
+                        return null;
+                    },
+                    position: 'bottomright'
+                }).addTo(map);
 
-                    // Set the flag to indicate that the route has been shown
-                    routeShown = true;
+                // Get the route's bounds
+                var routeBounds = routeControl.getWaypoints().reduce(function (bounds, waypoint) {
+                    return bounds.extend(waypoint.latLng);
+                }, L.latLngBounds());
 
-                    // Adjust the z-index of the panel to be below the route information box
-                    document.getElementById("panel").style.zIndex = 1;
+                // Adjust the map's view to fit the route bounds with a specific zoom level
+                map.setView(routeBounds.getCenter(), 10);
 
-                    // Send latitude and longitude to Flask server
-                    // sendCoordinatesToServer(originCoords[1], originCoords[0]);
-                });
+                // Set the flag to indicate that the route has been shown
+                routeShown = true;
+
+                const marker = L.marker([originCoords[1], originCoords[0]], {icon: taxiIcon}).addTo(map);
+
+                // Add the origin to the markers list
+                markersList.push(marker);
+
+                console.log('Estimated Components:', slider1.value / 100, slider2.value / 100, slider3.value / 100);
+
+                fetchNearbyChargers(
+                    originCoords[1],
+                    originCoords[0],
+                    slider1.value / 100,
+                    slider2.value / 100,
+                    slider3.value / 100,
+                    selected_value,
+                    radius
+                );
+                console.log('Chargers around origin');
             });
+        });
+    }
+
+    // Function to convert coordinates to address using reverse geocoding
+    function reverseGeocode(lat, lng, callback) {
+        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxAccessToken}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.features && data.features.length > 0) {
+                    const address = data.features[0].place_name;
+                    callback(address);
+                } else {
+                    callback(null);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching Mapbox Geocoding data:', error);
+                callback(null);
+            });
+    }
+
+    // Function to set map view to origin coordinates
+    function resetMapView() {
+        // Check if the route is shown
+        if (!routeShown) {
+            alert('Please show the route first.');
+            return;
         }
 
+        map.setView([origLat, origLng], 8);
+    }
+
+    // Function to handle slider value changes
+    function updateSlider(value, id) {
+        console.log(`Slider value for ${id}: ${value}`);
+    }
+
+    // Function to open a custom popup on right-click and show the nearby chargers
+    function showCustomPopup(lat, lng) {
+        var selected_value = document.getElementById("chargersLocation").value;
+        // console.log(selected_value);
+
+        var radius = parseInt(document.getElementById("radius").value);
+        // console.log(radius);
+
+        // Create a custom popup
+        var popupContent = `<p>Latitude: ${lat.toFixed(4)}</p><p>Longitude: ${lng.toFixed(4)}</p>
+                        <p><a href="#" id="showNearbyChargers">Show nearby chargers</a></p>`;
+        var popup = L.popup()
+            .setLatLng([lat, lng])
+            .setContent(popupContent)
+            .openOn(map);
+
+        // Attach a click event listener to the "Show nearby chargers" link
+        document.getElementById("showNearbyChargers").addEventListener('click', function (event) {
+            event.preventDefault(); // Prevent the default link behavior
+
+            fetchNearbyChargers(
+                lat,
+                lng,
+                slider1.value / 100,
+                slider2.value / 100,
+                slider3.value / 100,
+                selected_value,
+                radius
+            );
+            // Close the popup after clicking the link
+            map.closePopup(popup);
+        });
+    }
+
+    // Function triggered when a user signs in using Google Sign-In
+    function onSignIn(googleUser) {
+        // Get the basic profile information of the signed-in user
+        var profile = googleUser.getBasicProfile();
+        console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+        console.log('Name: ' + profile.getName());
+        console.log('Image URL: ' + profile.getImageUrl());
+        console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+    }
 
 
+    // Function to sign out the user
+    function signOut() {
+        var auth2 = gapi.auth2.getAuthInstance();
+        auth2.signOut().then(function () {
+            console.log('User signed out.');
+        });
+    }
 
 </script>
-
 </body>
 </html>
