@@ -1,6 +1,6 @@
 # EcoCharge
 
-It internally deploys a Continuous k-Nearest Neighbor query, where the distance function is computed using Estimated Components (ECs) (i.e., a query we term CkNN-EC). An EC defines a function that can have a fuzzy value based on some estimates. Examples of ECs are: (i) the derouting cost, which is the time to reach the charger depending on estimated traffic; (ii) the (available clean) power at the charger, which depends on the estimated weather; and (iii) the charger availability,
+EcoCharge is an innovative framework whose objective is to allow drivers to recharge their Electric Vehicles (EVs) from the most environmentally friendly chargers using an intelligent hoarding approach. It internally deploys a Continuous k-Nearest Neighbor query, where the distance function is computed using Estimated Components (ECs) (i.e., a query we term CkNN-EC). An EC defines a function that can have a fuzzy value based on some estimates. Examples of ECs are: (i) the derouting cost, which is the time to reach the charger depending on estimated traffic; (ii) the (available clean) power at the charger, which depends on the estimated weather; and (iii) the charger availability,
 which depends on the estimated busy timetables that show when the charger is crowded. EcoCharge framework combines these multiple non-conflicting objectives into an
 optimization task providing user-defined ranking means through an intuitive spatial application. 
 
@@ -15,9 +15,9 @@ EcoCharge is a novel framework designed to optimize electric vehicle (EV) chargi
 
 In case you have any publications resulting from the EcoCharge platform, please cite the following paper(s):
 
-- "EcoCharge: Sustainable EV Charging utilizing CkNN-EC Queries", Soteris Constantinou, Dimitris Papazachariou, Constantinos Costa, Andreas Konstantinidis, Mohamed F. Mokbel, Demetrios Zeinalipour-Yazti, Proceedings of the  25th IEEE International Conference on Mobile Data Management (MDM'24), 4 pages, Brussels, Belgium, 2024. 
+- "EcoCharge: Sustainable EV Charging utilizing CkNN-EC Queries", Soteris Constantinou, Dimitris Papazachariou, Constantinos Costa, Andreas Konstantinidis, Mohamed F. Mokbel, Demetrios Zeinalipour-Yazti, Proceedings of the  25th IEEE International Conference on Mobile Data Management (MDM'24), 4 pages, Brussels, Belgium, Jun 24 - 27, 2024. 
 
-- "A Framework for Continuous kNN Ranking of Electric Vehicle Chargers with Estimated Components", Soteris Constantinou, Constantinos Costa, Andreas Konstantinidis, Mohamed F. Mokbel, Demetrios Zeinalipour-Yazti, Proceedings of the 40th IEEE International Conference on Data Engineering (ICDE'24), IEEE Press, 13 pages, Utrecht, Netherlands, Apr 16, 2024 - Apr 19, 2024. 
+- "A Framework for Continuous kNN Ranking of Electric Vehicle Chargers with Estimated Components", Soteris Constantinou, Constantinos Costa, Andreas Konstantinidis, Mohamed F. Mokbel, Demetrios Zeinalipour-Yazti, Proceedings of the 40th IEEE International Conference on Data Engineering (ICDE'24), IEEE Press, 13 pages, Utrecht, Netherlands, Apr 16 - 19, 2024. 
 
 
 We hope that you find our EcoCharge useful for your research and innovation activities.  We would like to have your feedback, comments and remarks and of course any experiences and test results from your own experimental setups. Questions and feedback may be sent to ecocharge@cs.ucy.ac.cy
@@ -58,5 +58,6 @@ Statistics (CDGS)” (https://www.californiadgstats.ca.gov/).
 
 
 Project Supervisor: Prof. Demetrios Zeinalipour-Yazti
+
 Project Leader: Soteris Constantinou
 
