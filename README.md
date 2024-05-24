@@ -15,7 +15,9 @@ EcoCharge is a novel framework designed to optimize electric vehicle (EV) chargi
 
 In case you have any publications resulting from the EcoCharge platform, please cite the following paper(s):
 
-- "A Framework for Continuous kNN Ranking of Electric Vehicle Chargers with Estimated Components", Soteris Constantinou, Constantinos Costa, Andreas Konstantinidis, Mohamed F. Mokbel, Demetrios Zeinalipour-Yazti, Proceedings of the 40th IEEE International Conference on Data Engineering (ICDE'24), IEEE Press, 13 pages, Utrecht, Netherlands, Apr 16, 2024 - Apr 19, 2024. (accepted).
+- "EcoCharge: Sustainable EV Charging utilizing CkNN-EC Queries", Soteris Constantinou, Dimitris Papazachariou, Constantinos Costa, Andreas Konstantinidis, Mohamed F. Mokbel, Demetrios Zeinalipour-Yazti, Proceedings of the  25th IEEE International Conference on Mobile Data Management (MDM'24), 4 pages, Brussels, Belgium, 2024. 
+
+- "A Framework for Continuous kNN Ranking of Electric Vehicle Chargers with Estimated Components", Soteris Constantinou, Constantinos Costa, Andreas Konstantinidis, Mohamed F. Mokbel, Demetrios Zeinalipour-Yazti, Proceedings of the 40th IEEE International Conference on Data Engineering (ICDE'24), IEEE Press, 13 pages, Utrecht, Netherlands, Apr 16, 2024 - Apr 19, 2024. 
 
 
 We hope that you find our EcoCharge useful for your research and innovation activities.  We would like to have your feedback, comments and remarks and of course any experiences and test results from your own experimental setups. Questions and feedback may be sent to ecocharge@cs.ucy.ac.cy
@@ -55,4 +57,6 @@ The Source code for the EcoCharge Client web application using Leaflet, Mapbox, 
 Statistics (CDGS)” (https://www.californiadgstats.ca.gov/). 
 
 
-Project Leader: Demetris Zeinalipour
+Project Supervisor: Prof. Demetrios Zeinalipour-Yazti
+Project Leader: Soteris Constantinou
+
