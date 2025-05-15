@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MicroGrid Eco Charging Network Map</title>
+    <!--<link rel="stylesheet" href="styles.css">-->
+    <!--<link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />-->
+    <!-- Bootstrap CSS -->
+    <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    />
+    <!-- Bootstrap JavaScript (including Popper.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet Locate Plugin -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css"
+    />
+    <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
+    <!-- JQuery 3.7.1 Javascript -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Leaflet Routing Machine CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+    />
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <!-- Leaflet Marker Clustering CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"
+    />
+  </head>
+  <style>
+
+    body {
+        padding: 0;
+        margin: 0;
+        font-family: "Arial", sans-serif;
+    }
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden; /* Prevent scrolling */
+    }
+
+    #map {
+        width: 100vw;
+        height: 100vh; /* Ensure the map fills the entire screen */
+    }
+
+    .toggle-button {
+        padding: 10px 20px;
+        background-color: #16095e;
+        color: #fff;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .toggle-button:hover {
+        background-color: #21108a;
+    }
+
+    /* Form Container Styling */
+    .form-container {
+        display: none; /* Hidden by default */
+        font-family: inherit; 
+        position: absolute;
+        top: 60px;
+        right: 20px;
+        background-color: #ffffff;
+        padding: 20px;
+        width: 240px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+    }
+
+    .input-box {
+        width: 100%;
+        padding: 6px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background-color: #f9f9f9;
+    }
+
+    label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #8f8c8c;
+    }
+
+    select, input[type="number"] {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background-color: #f9f9f9;
+    }
+
+    input[type="submit"] {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #ffffff;
+        background-color: #16095e;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #21108a;
+    }
+
+    #coordinates {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 4px;
+        font-size: 14px;
+        z-index: 1000;
+    }
+
+    .range-slider {
+        -webkit-appearance: none; 
+        appearance: none; 
+        width: 100%;
+        height: 13px; 
+        background: #d3d3d3; 
+        border-radius: 5px; 
+        outline: none; 
+        transition: background 0.3s ease; /* Smooth transition for hover or active effects */
+    }
+
+    .range-slider:hover {
+        background: #a3a3a3; 
+    }
+
+    .range-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; 
+        appearance: none; 
+        width: 20px; 
+        height: 20px; 
+        background: #291888; 
+        border-radius: 50%; 
+        cursor: pointer; 
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+        transition: background 0.3s ease; 
+    }
+
+    .range-slider::-webkit-slider-thumb:hover {
+        background: #3e3e41; 
+    }
+
+    /* Active states for track */
+    .range-slider:active::-webkit-slider-thumb {
+        background: #2604ec; /* Thumb color when active */
+    }
+
+    .leaflet-control-locate {
+        margin-bottom: 10px !important; /* Moves the button UP above the zoom controls */
+    }
+
+    .custom-checkbox input {
+        display: none;
+    }
+
+    /* Styled checkbox label */
+    .custom-checkbox {
+      display: inline-flex;
+      top: 50px;
+      left: 10px;
+      /*align-items: center;
+      justify-content: center;*/
+      background-color: #7b8ca4;
+      color: rgb(2, 2, 2);
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 25px;
+      z-index: 1000;
+      cursor: pointer;
+      transition: background 0.3s ease-in-out;
+      font-size: 14px;
+      font-weight: 100;
+      width: auto;
+      max-width: 250px;
+    }
+
+    /* Checkmark inside */
+    .custom-checkbox .checkmark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.5);
+      margin-right: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      position: relative;
+    }
+
+    /* When checked, change color & show checkmark */
+    .custom-checkbox input:checked + .checkmark::after {
+      content: "✔"; /* Unicode checkmark */
+      color: #000000; /* Purple checkmark */
+      font-size: 12px;
+      font-weight: bold;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      }
+
+
+    /* Close Button */
+    .close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #333;
+        background: none;
+        border: none;
+        outline: none;
+        z-index: 1001; /* Ensure it stays above everything */
+    }
+
+  </style>
+
+  <body>
+      <div
+        style="
+          margin: 0;
+          position: fixed;
+          top: 10px;
+          right: 20px;
+          z-index: 1000;
+          display: flex;
+          gap: 5px;
+          font-family: sans-serif;
+          font-size: medium;
+          align-items: flex-start;          
+        "
+      >
+        <!-- My Vehicle Button and Form -->
+        <div style="position: relative">
+          <button class="toggle-button" onclick="toggleForm('vehicleForm')">
+            My Vehicle
+          </button>
+          <div
+            class="form-container"
+            id="vehicleForm"
+            style="position: absolute; top: 40px; right: 0"
+          >
+            <form onsubmit="preventFormSubmission(event)">
+              <label for="make">Make:</label>
+              <select
+                id="make"
+                name="make"
+                onchange="updateModels()"
+                class="input-box"
+                required
+              >
+                <option value="">Select Make</option>
+                {% for make, models in vehicle_data.items() %}
+                <option value="{{ make }}">{{ make }}</option>
+                {% endfor %}
+              </select>
+
+              <label for="model">Model:</label>
+              <select id="model" name="model" class="input-box" required>
+                <option value="">Select Model</option>
+              </select>
+
+              <label for="batteryCapacity">Battery Capacity (kWh):</label>
+              <input type="text" id="batteryCapacity" name="batteryCapacity" inputmode="numeric" class="input-box" readonly required/>
+              <label for="consumptionRate">Consumption Rate (kWh/100 miles):</label>
+              <input type="text" id="consumptionRate" name="consumptionRate" inputmode="numeric" class="input-box" readonly required/>
+              <input type="submit" value="OK" />
+            </form>
+          </div>
+        </div>
+
+        <!-- Estimated Components Button and Form -->
+        <div style="position: relative">
+          <button class="toggle-button" onclick="toggleForm('estimatedComponentsForm')">Estimated Components</button>
+          <div class="form-container" id="estimatedComponentsForm" style="position: absolute; top: 40px; right: 0">
+            <form>
+              <label for="ec1">Derouting:</label>
+              <span id="range-value1">100</span><span> %</span>
+              <input type="range" id="ec1" name="ec1" min="0" max="100" value="100" class="range-slider" onchange="updateSlider(this.value, 'range-value1')"
+              /><br />
+
+              <label for="ec2">Availability:</label>
+              <span id="range-value2">100</span><span> %</span>
+              <input type="range" id="ec2" name="ec2" min="0" max="100" value="100" class="range-slider" onchange="updateSlider(this.value, 'range-value2')"
+              /><br />
+
+              <label for="ec3">Sustainable Charging:</label>
+              <span id="range-value3">100</span><span> %</span>
+              <input type="range" id="ec3" name="ec3" min="0" max="100" value="100" class="range-slider" onchange="updateSlider(this.value, 'range-value3')"
+              /><br />
+
+              <label for="radius">Radius:</label>
+              <span id="range-value4">50</span><span> Km</span>
+              <input type="range" id="radius" name="radius" min="0" max="100" value="50" class="range-slider" onchange="updateSlider(this.value, 'range-value4')"
+              /><br />
+            </form>
+          </div>
+        </div>
+
+        <!-- View My Grid Button -->
+        <div>
+          <button class="toggle-button" onclick="viewMyGrid()">View My Grid</button>
+        </div>
+
+        <label class="custom-checkbox">
+        <input type="checkbox" id="loadMyChargers" onchange="loadChargers()">
+        <span class="checkmark"></span> Show My Chargers
+        </label>
+    </div>
+
+    
+
+
+    <!-- Display the list of chargers -->
+    <ul id="chargers-list"></ul>
+
+    <div id="map"></div>
+
+    <!-- Coordinates display -->
+    <div id="coordinates"></div>
+
+    <script>
+      //var userID = null;
+
+        /*document.getElementById('addChargerForm').addEventListener('submit', function(event) {
+          event.preventDefault();
+
+          let chargerData = {
+              name: document.getElementById('chargerName').value,
+              type: document.getElementById('chargerType').value,
+              mode: document.getElementById('loadpointMode').value,
+              status: document.getElementById('chargerStatus').value,
+              power: parseInt(document.getElementById('chargerPower').value),
+              enabled: document.getElementById('chargerEnabled').value === "true"
+          };
+
+          fetch('/api/chargers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify(chargerData)
+          })
+          .then(response => response.json())
+          .then(data => {
+              alert(data.message || "Error adding charger");
+              loadChargers(); // Refresh charger list
+          })
+          .catch(error => console.error('Error:', error));
+      });
+
+      document.getElementById('addLoadpointForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        let loadpointData = {
+              title: document.getElementById('loadpointTitle').value,
+              chargerName: document.getElementById('nameCharger').value,
+              mode: document.getElementById('loadpointMode').value,
+              vehicleTitle: document.getElementById('vehicleTitle').value,
+          };
+
+          fetch('/api/loadpoints', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify(loadpointData)
+          })
+          .then(response => response.json())
+          .then(data => {
+              alert(data.message || "Error adding loadpoint");
+              //loadChargers(); // Refresh charger list
+          })
+          .catch(error => console.error('Error:', error));
+      });*/
+
+      function viewMyGrid() {
+          window.location.href = "http://172.27.16.28:7070/#/";
+      }
+
+      // Fetch chargers and display them
+      function loadChargers() {
+          fetch('/api/chargers')
+              .then(response => response.json())
+              .then(data => {
+                  console.log("Chargers from API:", data); // Debugging API response
+
+                  // Remove existing markers before adding new ones
+                  map.eachLayer(function (layer) {
+                      if (layer instanceof L.Marker) {
+                          map.removeLayer(layer);
+                      }
+                  });
+
+                  let showMyChargers = document.getElementById('loadMyChargers').checked;
+                  console.log("UserID from session:", userID);
+                  console.log("Checkbox checked:", showMyChargers);
+
+                  data.forEach(charger => {
+                      let chargerUserID = charger.UserID ? parseInt(charger.UserID) : null;
+                      console.log(`Checking charger: ${charger.name}, Charger UserID: ${chargerUserID}`);
+
+                      // Only filter when checkbox is checked
+                      if (!showMyChargers || (userID !== null && chargerUserID === userID)) {
+                          console.log(`Adding charger: ${charger.name}`);
+
+                          // Ensure valid latitude/longitude
+                          if (charger.latitude !== null && charger.longitude !== null) {
+                              let marker = L.marker([charger.latitude, charger.longitude]).addTo(map);
+
+                              let popupContent = `
+                                  <b>${charger.name}</b><br>
+                                  Type: ${charger.type}<br>
+                                  Template: ${charger.template}<br>
+                                  Status: ${charger.status}<br>
+                                  Power: ${charger.power} W<br>
+                                  Enabled: ${charger.enabled ? "Yes" : "No"}
+                              `;
+                              marker.bindPopup(popupContent);
+                          } else {
+                              console.warn(`Skipping charger ${charger.name} due to missing coordinates`);
+                          }
+                      }
+                  });
+              })  
+              .catch(error => console.error('Error loading chargers:', error));
+      }
+
+      // Load chargers when page loads
+      document.addEventListener("DOMContentLoaded", loadChargers);
+
+          // JavaScript object for vehicle data passed from Flask
+          const vehiclesByMake = {{ vehicle_data | tojson }};
+
+          function updateModels() {
+              const make = document.getElementById("make").value;
+              const modelSelect = document.getElementById("model");
+              const batteryCapacityInput = document.getElementById("batteryCapacity");
+              const consumptionRateInput = document.getElementById("consumptionRate");
+
+              modelSelect.innerHTML = "<option value=''>Select Model</option>";
+              batteryCapacityInput.value = '';
+              consumptionRateInput.value = '';
+
+              const models = vehiclesByMake[make] || [];
+              models.forEach(vehicle => {
+                  const option = document.createElement("option");
+                  option.value = vehicle.model;
+                  option.textContent = vehicle.model;
+                  modelSelect.appendChild(option);
+              });
+
+              // Reset capacity and consumption when make changes
+              modelSelect.addEventListener("change", () => {
+                  const selectedModel = modelSelect.value;
+                  const selectedVehicle = models.find(vehicle => vehicle.model === selectedModel);
+
+                  if (selectedVehicle) {
+                      batteryCapacityInput.value = selectedVehicle.battery_capacity;
+                      consumptionRateInput.value = selectedVehicle.consumption_rate;
+                  } else {
+                      batteryCapacityInput.value = '';
+                      consumptionRateInput.value = '';
+                  }
+              });
+          }
+
+          function toggleForm(formId) {
+            // Hide all forms
+            const forms = document.querySelectorAll('.form-container');
+            forms.forEach(form => {
+                if (form.id !== formId) {
+                    form.style.display = 'none';
+                }
+            });
+
+            // Toggle the selected form
+            const form = document.getElementById(formId);
+            form.style.display = (form.style.display === 'none' || !form.style.display) ? 'block' : 'none';
+          }
+
+            function updateSlider(value, targetId) {
+                document.getElementById(targetId).textContent = value;
+            }
+
+            function preventFormSubmission(event) {
+                event.preventDefault(); // Prevent form submission
+            }
+
+            // Leaflet map setup and user location functionality
+            var map;
+
+            function initializeMap(latitude, longitude) {
+                map = L.map('map').setView([latitude, longitude], 13);
+                map.zoomControl.setPosition('bottomright');
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+
+                L.control.locate({
+                    position: 'bottomright', // Position of the locate button
+                    flyTo: true, // Smooth animation when locating
+                    keepCurrentZoomLevel: false, // Adjusts zoom when locating
+                    drawCircle: true, // Draws accuracy circle
+                    markerStyle: {
+                        color: "#16095e", // Custom color for user marker
+                        fillColor: "#16095e",
+                        fillOpacity: 0.8
+                    },
+                    strings: {
+                        title: "Show My Location", // Tooltip text
+                        popup: "Your location is within {distance} meters", // Custom popup text
+                    }
+                }).addTo(map);
+
+                map.on('locationerror', function(e) {
+                    alert(e.message);
+                });
+
+                //loadAllChargers();
+                //loadVisibleChargers();
+                /*map.on('moveend', () => {
+                    clearMarkers();
+                    addVisibleMarkers();
+                });*/
+
+                getUserID(); 
+                loadChargers(); // Load chargers after map is initialized
+
+                // Event listener for map click to display coordinates
+                map.on('click', function(e) {
+                    var lat = e.latlng.lat.toFixed(6);  // Latitude with 6 decimal places
+                    var lng = e.latlng.lng.toFixed(6);  // Longitude with 6 decimal places
+                    document.getElementById('coordinates').innerText = `Latitude: ${lat}, Longitude: ${lng}`;
+                });
+
+                // Event listener for map double-click to hide coordinates
+                map.on('dblclick', function() {
+                    document.getElementById('coordinates').style.display = 'none';
+                });
+            }
+
+            function getUserID() {
+                fetch('/api/get_user_id')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.userID) {
+                            userID = data.userID;
+                        }
+                    })
+                    .catch(error => console.error('Error fetching user ID:', error));
+            }
+
+            initializeMap(35.0, 33.0);
+    </script>
+  </body>
+</html>

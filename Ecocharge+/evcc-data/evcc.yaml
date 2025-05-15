@@ -1,0 +1,471 @@
+network:
+  port: 7070
+log: debug
+interval: 3s
+javascript:
+- vm: shared
+  script: |
+    state = {
+      residualpower: 500,
+      pvpower: 5000,
+      batterypower: -750,
+      batterySoc: 55,
+      gridpower: -1000,
+      loadpoints: [
+        { enabled: true, vehicleSoc: 62, maxcurrent: 6, phases: 1, chargepower: 0 },
+        { enabled: true, vehicleSoc: 22, maxcurrent: 0, phases: 3, chargepower: 0 },
+        { enabled: false, vehicleSoc: 50, maxcurrent: 0, phases: 3, chargepower: 0 },
+        { enabled: false, vehicleSoc: 45, maxcurrent: 0, phases: 1, chargepower: 0 },
+        { enabled: true, vehicleSoc: 30, maxcurrent: 0, phases: 1, chargepower: 0 },
+        { enabled: false, vehicleSoc: 30, maxcurrent: 0, phases: 1, chargepower: 0 },
+        { enabled: false, vehicleSoc: 30, maxcurrent: 0, phases: 1, chargepower: 0 }
+      ]
+    };
+
+    function logState() {
+      console.log("state:", JSON.stringify(state));
+    }
+
+    function calculateCO2() {
+      var co2_grid = 350;  // gCO₂/kWh for grid electricity
+      var co2_solar = 0;   // gCO₂/kWh for solar energy
+      var co2_battery = 100; // gCO₂/kWh for battery usage
+
+      console.log("DEBUG: Current Power Values:");
+      console.log("Grid Power:", state.gridpower);
+      console.log("Solar Power:", state.pvpower);
+      console.log("Battery Power:", state.batterypower);
+      var gridPower = Math.max(0, state.gridpower);  
+      var solarPower = Math.max(0, state.pvpower);  
+      var batteryPower = state.batterypower;  
+      var totalPower = gridPower + solarPower + Math.abs(batteryPower);
+      if (totalPower == 0) {
+        console.log("⚠️ WARNING: Total power is 0, avoiding division by zero.");
+        totalPower = 1; 
+      }
+
+      state.co2PerKWh = (gridPower * co2_grid + 
+                      solarPower * co2_solar + 
+                      Math.abs(batteryPower) * co2_battery) / totalPower;
+
+      console.log("✅ Updated CO₂ Intensity:", state.co2PerKWh, "gCO₂/kWh");
+    }
+
+    calculateCO2();
+
+meters:
+- name: grid
+  type: custom
+  power:
+    source: js
+    vm: shared
+    script: |
+      console.log("Before update: gridpower =", state.gridpower);
+      state.gridpower = state.loadpoints[0].chargepower + state.loadpoints[1].chargepower
+        + state.residualpower - state.batterypower - state.pvpower;
+      console.log("After update: gridpower =", state.gridpower);
+
+      calculateCO2();
+      state.gridpower;
+
+    in:
+    - name: pvpower
+      type: float
+      config:
+        source: js
+        vm: shared
+        script: |
+          console.log("Before update: pvpower =", state.pvpower);
+          state.pvpower = 8000 + 500 * Math.random();
+          console.log("After update: pvpower =", state.pvpower);
+
+          calculateCO2();
+          state.pvpower;
+
+    - name: batterypower
+      type: float
+      config:
+        source: js
+        vm: shared
+        script: |
+          console.log("Before update: batterypower =", state.batterypower);
+          state.batterypower = state.gridpower > 0 ? 1000 * Math.random() : 0;
+          console.log("After update: batterypower =", state.batterypower);
+
+          calculateCO2();
+          state.batterypower;
+
+- name: pv
+  type: custom
+  power:
+    source: js
+    vm: shared
+    script: state.pvpower;
+- name: battery
+  type: custom
+  power:
+    source: js
+    vm: shared
+    script: state.batterypower;
+  soc:
+    source: js
+    vm: shared
+    script: |
+      if (state.batterypower < 0) state.batterySoc++; else state.batterySoc--;
+
+      if (state.batterySoc < 10) state.batterySoc = 90;
+
+      if (state.batterySoc > 90) state.batterySoc = 10;
+
+      state.batterySoc;
+
+  capacity: 13.4
+  batterymode:
+    source: js
+    vm: shared
+    script: '1'
+
+- name: meter_charger_1
+  type: custom
+  power:
+    source: js
+    vm: shared
+    script: state.loadpoints[0].chargepower;
+- name: meter_charger_2
+  type: custom
+  power:
+    source: js
+    vm: shared
+    script: state.loadpoints[1].chargepower;
+- name: meter_charger_4
+  type: custom
+  power:
+    source: js
+    vm: shared
+    script: state.loadpoints[0].chargepower;
+- name: meter_charger_5
+  type: custom
+  power:
+    source: js
+    vm: shared
+    script: state.loadpoints[1].chargepower;
+- name: meter_charger_9
+  type: custom
+  power:
+    source: js
+    vm: shared
+    script: state.loadpoints[0].chargepower;
+chargers:
+- name: charger_1
+  type: custom
+  enable:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[0];
+
+      lp.enabled = enable;
+
+      enable;
+
+    out:
+    - name: enable
+      type: bool
+      config:
+        source: js
+        vm: shared
+        script: |
+          if (enable) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+
+  enabled:
+    source: js
+    vm: shared
+    script: state.loadpoints[0].enabled;
+  status:
+    source: js
+    vm: shared
+    script: |
+      if (state.loadpoints[0].enabled) "C"; else "B";
+
+  maxcurrent:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[0];
+
+      lp.maxcurrent = maxcurrent;
+
+      if (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+
+- name: charger_2
+  type: custom
+  enable:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[1];
+
+      lp.enabled = enable;
+
+      if (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+
+  enabled:
+    source: js
+    vm: shared
+    script: state.loadpoints[1].enabled;
+  status:
+    source: js
+    vm: shared
+    script: |
+      if (state.loadpoints[1].enabled) "C"; else "B";
+
+  maxcurrent:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[1];
+
+      lp.maxcurrent = maxcurrent;
+
+      if (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+
+  tos: true
+  phases1p3p:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      if (phases === 1) lp.phases = 1; else lp.phases = 3;
+
+      lp.phases;
+
+- name: charger_4
+  type: custom
+  enable:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[0];
+
+      lp.enabled = enable;
+
+      if (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+  enabled:
+    source: js
+    vm: shared
+    script: state.loadpoints[0].enabled;
+  status:
+    source: js
+    vm: shared
+    script: |
+      if (state.loadpoints[0].enabled) "C"; else "B";
+  maxcurrent:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[0];
+
+      lp.maxcurrent = maxcurrent;
+
+      if (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+- name: charger_5
+  type: custom
+  enable:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[1];
+
+      lp.enabled = enable;
+
+      if (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+  enabled:
+    source: js
+    vm: shared
+    script: state.loadpoints[1].enabled;
+  status:
+    source: js
+    vm: shared
+    script: |
+      if (state.loadpoints[1].enabled) "C"; else "B";
+  maxcurrent:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[1];
+
+      lp.maxcurrent = maxcurrent;
+
+      if (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+- name: charger_9
+  type: custom
+  enable:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[0];
+
+      lp.enabled = enable;
+
+      if (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+  enabled:
+    source: js
+    vm: shared
+    script: state.loadpoints[0].enabled;
+  status:
+    source: js
+    vm: shared
+    script: |
+      if (state.loadpoints[0].enabled) "C"; else "B";
+  maxcurrent:
+    source: js
+    vm: shared
+    script: |
+      logState();
+
+      var lp = state.loadpoints[0];
+
+      lp.maxcurrent = maxcurrent;
+
+      if (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;
+vehicles:
+- name: vehicle_1
+  title: blauer e-Golf
+  type: custom
+  soc:
+    source: js
+    vm: shared
+    script: |
+      var lp = state.loadpoints[0];
+
+      if (lp.chargepower > 0) lp.vehicleSoc+=0.1; else lp.vehicleSoc-=0.1;
+
+      if (lp.vehicleSoc < 15) lp.vehicleSoc = 80;
+
+      if (lp.vehicleSoc > 80) lp.vehicleSoc = 15;
+
+      lp.vehicleSoc;
+
+  range:
+    source: js
+    vm: shared
+    script: |
+      var lp = state.loadpoints[0]
+
+      var range = (44 * lp.vehicleSoc) / 15;
+
+      range
+
+  capacity: 44
+- name: vehicle_2
+  title: "wei\xDFes Model 3"
+  type: custom
+  soc:
+    source: js
+    vm: shared
+    script: |
+      var lp = state.loadpoints[1];
+
+      if (lp.chargepower > 0) lp.vehicleSoc++; else lp.vehicleSoc--;
+
+      if (lp.vehicleSoc < 15) lp.vehicleSoc = 75;
+
+      if (lp.vehicleSoc > 75) lp.vehicleSoc = 15;
+
+      lp.vehicleSoc;
+
+  range:
+    source: js
+    vm: shared
+    script: |
+      var lp = state.loadpoints[1]
+
+      var range = (80 * lp.vehicleSoc) / 17;
+
+      range
+
+  status:
+    source: js
+    vm: shared
+    script: '"B"'
+  capacity: 80
+  limitsoc:
+    source: const
+    value: 90
+- name: vehicle_3
+  type: template
+  template: offline
+  title: "gr\xFCner Honda e"
+  capacity: 8
+- name: vehicle_4
+  type: template
+  template: offline
+  title: schwarzes VanMoof
+  icon: bike
+  capacity: 0.46
+- name: vehicle_5
+  type: template
+  template: offline
+  title: "W\xE4rmepumpe"
+  icon: waterheater
+site:
+  title: MicroGrid
+  meters:
+    grid: grid
+    pv: pv
+    battery: battery
+loadpoints:
+- title: Carport
+  charger: charger_1
+  mode: pv
+  meter: meter_charger_1
+  vehicle: vehicle_1
+- title: Garage
+  charger: charger_2
+  mode: pv
+  meter: meter_charger_2
+  vehicle: vehicle_2
+- title: My Garage 5
+  charger: charger_4
+  mode: pv
+  meter: meter_charger_4
+  vehicle: vehicle_5
+- title: My Garage
+  charger: charger_5
+  mode: pv
+  meter: meter_charger_5
+  vehicle: vehicle_5
+- title: My Garage 10
+  charger: charger_9
+  mode: pv
+  meter: meter_charger_9
+  vehicle: vehicle_5
+tariffs:
+  currency: EUR
+  grid:
+    type: template
+    template: energy-charts-api
+    bzn: DE-LU
+    charges: 0.15
+  feedin:
+    type: fixed
+    price: 0.08

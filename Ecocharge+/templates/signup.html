@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <title>Signup</title>
+    <style>
+        /* Make the map cover the full background */
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            z-index: 1; /* Set a lower z-index to place it behind the container */
+        }
+
+        html {
+            position: relative;
+            height: 100%;
+        }
+
+        body {
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #000000;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #000000;
+        }
+
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ffffff;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="password"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ffffff;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            width: 50%;
+            padding: 10px;
+            background-color: #8fddcc;
+            color: rgb(3, 3, 3);
+            border: none;
+            border-radius: 30px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #b3e2d8;
+        }
+
+        .container {
+            position: relative; 
+            background-color: #33333371;
+            padding: 20px;
+            border-radius: 40px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+            width: 100%;
+            z-index: 10;
+            backdrop-filter: blur(12px);
+        }
+
+
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <h1>Sign Up</h1>
+
+        {% if error_message %}
+        <p style="color: red; text-align: center;">{{ error_message }}</p>
+        {% endif %}
+
+        <form action="/signup" method="POST">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" placeholder="Name" required>
+
+            <label for="surname">Surname:</label>
+            <input type="text" id="surname" name="surname" placeholder="Surname" required>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="example@gmail.com" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" placeholder="Password" required>
+
+            <label for="user">Sign Up as operator 
+                <input type="checkbox" name="is_operator" value="true">
+            </label>
+            
+            <!-- Sign In message -->
+            <p style="text-align: center; margin-top: 25px; color: white;">
+                Already have an account? 
+                <a href="/signin" style="color: #8fddcc; text-decoration: none;"><i>Sign In</i></a>
+            
+            <input type="submit" value="Sign Up">
+
+            
+
+        </form>
+    </div>
+
+    <!-- Map div positioned in the background -->
+    <div id="map"></div>
+    <script>
+        // Initialize a static map centered on a default location with all interactions disabled
+        var map = L.map('map', {
+            center: [35.0, 33.0],        // Coordinates for Cyprus as an example
+            zoom: 2,                    // Zoom level
+            dragging: false,             // Disable dragging
+            touchZoom: false,            // Disable touch zoom
+            scrollWheelZoom: false,      // Disable scroll wheel zoom
+            doubleClickZoom: false,      // Disable double-click zoom
+            boxZoom: false,              // Disable box zoom
+            keyboard: false,             // Disable keyboard controls
+            zoomControl: false           // Remove zoom control buttons
+        });
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let lastChecked = null;
+        function toggleRadio(radio) {
+        if (lastChecked === radio) {
+            radio.checked = false;
+            lastChecked = null;
+        } else {
+            lastChecked = radio;
+        }
+        }
+
+    </script>
+</body>
+</html>

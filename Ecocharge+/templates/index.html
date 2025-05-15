@@ -1,0 +1,4045 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MicroGrid Eco Charging Network Map</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <!-- Bootstrap JavaScript (including Popper.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Leaflet CSS (local, safe from CORS issues) -->
+    <link rel="stylesheet" href="/static/leaflet/leaflet.css" />
+    <script src="/static/leaflet/leaflet.js"></script>
+    <!-- JQuery 3.7.1 Javascript -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Leaflet Locate Control (jsDelivr) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.78.0/dist/L.Control.Locate.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.78.0/dist/L.Control.Locate.min.js"></script>
+    <!-- Leaflet Routing Machine (jsDelivr) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@latest/dist/leaflet-routing-machine.min.js"></script>
+    <!-- Leaflet Marker Clustering CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
+    <!-- turf.js for convex hulls-->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  </head>
+  <style>
+
+    body {
+        padding: 0;
+        margin: 0;
+        font-family: "Arial", sans-serif;
+    }
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    #map {
+        width: 100vw;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1; /* Ensure it's below the navbar */
+        /*overflow: visible !important; /* Prevent Leaflet elements from being cropped */
+        transition: opacity 0.3s ease;
+    }
+
+    #ui-layer {
+        position: relative;
+        z-index: 10;
+    }
+
+    /* Full-page modal that appears under the navbar */
+    #myGridContainer {
+        display: none;
+        position: fixed;
+        top: 0px; /* Below the navbar */
+        /*left: 0;*/
+        width: 100%;
+        /*height: calc(100vh - 50px); /* Full height below navbar */
+        height: 100vh; 
+        background-color: rgba(94, 94, 94, 0.692);
+        backdrop-filter: blur(35px);
+        text-align: center;
+        padding-top: 20px;
+        z-index: 1001;
+        overflow-y: auto; /* Enables vertical scrolling */
+    }
+
+    .toggle-button {
+        position: absolute;
+        top: 7%;
+        left: 1%;
+        padding: 10px 20px;
+        background-color: #0d0636;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 16px;
+        z-index: 2000;
+        cursor: pointer;
+    }
+
+    .toggle-button:hover {
+        background-color: #12055a;
+    }
+
+    .filters-container {
+        position: relative; /* Parent element for absolute positioning */
+        display: inline-block; /* Ensures the form aligns properly */
+    }
+
+    /* Form Container Styling */
+    .form-container {
+        display: none; /* Hidden by default */
+        font-family: inherit; 
+        position: absolute;
+        top: 105px;
+        left: 5px;
+        background-color: #ffffff;
+        padding: 20px;
+        width: 240px;
+        border-radius: 5px;
+        border: 0px solid #676464;
+        max-height: 80vh; 
+        overflow-y: auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        scrollbar-width: thin;
+        scrollbar-color: #000000 #676464;
+    }
+
+    .form-container.show {
+        max-height: 500px;
+    }
+
+    .form-container h3 {
+        font-size: 16px;
+        font-weight: bold;
+        color: #5e5e5e; 
+        margin-bottom: 10px;
+        font-family: inherit; 
+    }
+
+    .form-container label {
+        font-size: 14px;
+        font-weight: normal;
+        color: #555; 
+        font-family: inherit;
+    }
+
+    .form-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .form-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .form-container::-webkit-scrollbar-thumb {
+        background: #16095e;
+        border-radius: 10px;
+    }
+
+    .form-container::-webkit-scrollbar-thumb:hover {
+        background: #21108a;
+    }
+
+    input[type="submit"] {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #ffffff;
+        background-color: #131f78;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 15px;
+    }
+
+    .input-box {
+        width: 100%;
+        padding: 6px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background-color: #f9f9f9;
+    }
+
+    select, input[type="number"] {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background-color: #f9f9f9;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #0c20b3;
+    }
+
+    #coordinates {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 4px;
+        font-size: 14px;
+        z-index: 1000;
+    }
+
+    .range-slider {
+        -webkit-appearance: none; 
+        appearance: none; 
+        width: 100%;
+        height: 13px; 
+        background: #d3d3d3; 
+        border-radius: 5px; 
+        outline: none; 
+        transition: background 0.3s ease;
+    }
+
+    .range-slider:hover {
+        background: #a3a3a3; 
+    }
+
+    .range-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; 
+        appearance: none; 
+        width: 20px; 
+        height: 20px; 
+        background: #131f78; 
+        border-radius: 50%; 
+        cursor: pointer; 
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+        transition: background 0.3s ease; 
+    }
+
+    .range-slider::-webkit-slider-thumb:hover {
+        background: #3e3e41; 
+    }
+
+    .range-slider:active::-webkit-slider-thumb {
+        background: #061dd0;
+    }
+
+    .leaflet-control-locate {
+        margin-bottom: 10px !important;
+    }
+
+    .custom-checkbox input {
+        display: none;
+    }
+
+    .custom-checkbox {
+      display: inline-flex;
+      top: 50px;
+      align-items: center;
+      /*justify-content: center;*/
+      background-color: #0098a3;
+      color: rgb(255, 255, 255);
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 25px;
+      z-index: 1000;
+      cursor: pointer;
+      transition: background 0.3s ease-in-out;
+      font-size: 14px;
+      font-weight: 100;
+      width: auto;
+      max-width: 250px;
+    }
+
+    .custom-checkbox .checkmark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.76);
+      margin-right: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      position: relative;
+    }
+
+    .custom-checkbox input:checked + .checkmark::after {
+      content: "✔";
+      color: #0b6d6d;
+      font-size: 12px;
+      font-weight: bold;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      }
+
+    .close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #333;
+        background: none;
+        border: none;
+        outline: none;
+        z-index: 1001; 
+    }
+
+    #showMyChargersContainer {
+        position: absolute;
+        top: 55px;
+        right: 0.5%;
+        z-index: 1050; 
+        padding: 5px 10px 1px 10px;
+        border-radius: 10px;
+        background-color: #000000a9;
+        backdrop-filter: blur(12px);
+        /*width: 205px;
+        height: 35px;*/
+    }
+
+    #showMicrogridsContainer {
+        position: absolute;
+        top: 111px;
+        right: 4px;
+        z-index: 1050; 
+        padding: 5px 10px 1px 10px;
+        border-radius: 10px;
+        background-color: #000000;
+        width: 205px;
+        height: 35px;
+    }
+
+    .navbar {
+        position: fixed;
+        top: 8px;               /* or 0 if you want it flush at the top */
+        left: 0;
+        right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        width: 99%;
+        z-index: 1050;
+        border-radius: 10px;
+        background-color: #000000af !important;
+        backdrop-filter: blur(10px);
+        padding: 2px 10px !important;
+    }
+
+    .navbar .btn {
+        color: rgb(19, 172, 126);
+        border: 1px solid rgb(19, 172, 126);
+        background: transparent;
+    }
+
+    .navbar .btn:hover {
+        background-color: rgb(19, 172, 126);
+        color: black;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        z-index: 1000;
+        width: 100%;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+    }
+
+    .dropdown-item {
+        cursor: pointer;
+        white-space: normal !important;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f1f1f1;
+    }
+
+    #origin {
+        min-width: 50px;
+        background-color: rgba(238, 238, 238, 0.767);
+        border-color:#ffffff;
+        backdrop-filter: blur(15px);
+    }
+
+    #destination {
+        min-width: 50px;
+        background-color: rgba(238, 238, 238, 0.767);
+        border-color:#ffffff;
+        backdrop-filter: blur(15px);
+    }
+
+    .dropdown {
+        width: auto !important;
+        height:auto !important;
+    }
+
+    /* Ensures grid content does not overflow */
+    #gridContent {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    /* Individual card styling */
+    .grid-item {
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        width: 300px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .grid-item:hover {
+        transform: scale(1.02);
+    }
+
+    /* Loadpoint title */
+    .grid-item strong {
+        font-size: 16px;
+        color: #333;
+    }
+
+    /* Charger list */
+    .grid-item ul {
+        list-style: none;
+        padding: 0;
+        margin-top: 10px;
+    }
+
+    .grid-item ul li {
+        background: #e9ecef;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+
+    #travelTime {
+        background-color: #1495ac;
+    }
+
+    /*.leaflet-routing-alternatives-container {
+        position: absolute !important;
+        bottom: 50px !important; 
+        left: 10px!important; 
+        z-index: 1000 !important;
+    }*/
+
+    .leaflet-routing-container {
+        width: 320px;
+        background-color: rgb(255, 255, 255) !important;
+        color: black !important;
+        border: none !important;
+        padding-top: 10px;
+        margin-top: 140px !important;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .leaflet-routing-container .close-button {
+        position: absolute;
+        top: 5px;
+        right: 8px;
+        background-color: #ffffff;
+        color: rgb(0, 0, 0);
+        border: none;
+        border-radius: 50%;
+        font-weight: bold;
+        width: 24px;
+        height: 24px;
+        text-align: center;
+        line-height: 20px;
+        cursor: pointer;
+        z-index: 9999;
+    }
+
+    .charger-info {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        position: fixed;
+        top: 20%;
+        right: 20px;
+        max-width: 22rem;
+        background: rgba(75, 73, 73, 0.829);
+        border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        z-index: 1100;
+    }
+
+    .charger-info.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    #charger-info-container {
+        position: fixed; /* Ensures it's relative to the viewport */
+        top: 20%; /* Adjust based on preference */
+        left: 1%; /* Ensures it is inside the screen */
+        max-width: 300px; /* Prevents it from being too wide */
+        background: white;
+        padding: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+    }
+
+
+    .close-btn {
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #000000;
+    }
+
+    .close-btn:hover {
+        color: #ff0000;
+    }
+
+    .charger-header {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Space between icon and title */
+    }
+
+    #charger-icon {
+        width: 25px;  /* Adjust width */
+        height: auto; /* Maintain aspect ratio */
+        /*max-height: 22px; /* Ensure it doesn't get too big */
+        border-radius: 5px;
+        object-fit: contain; /* Keeps proportions without cutting */
+        margin: 10px;
+    }
+
+    #charger-title {
+        font-size: 18px; /* Reduce title size */
+        font-weight: bold;
+        margin: 0; /* Remove excess spacing */
+    }
+
+    #charger-details {
+        text-align: left;
+    }
+
+    #charger-card {
+        position: fixed;
+        top: 20%;
+        right: 10px;
+        z-index: 1100;
+        min-width: 320px;
+        max-width: 22rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+    }
+
+    .form-check-input {
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        color: white;
+    }
+
+    .custom-ranked-marker {
+        background-color: #009c27c4;
+        color: white;
+        font-weight: bold;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 30px;
+        border: 2px solid #009c27c4;
+        font-size: 14px;
+        box-shadow: 0 0 6px rgba(0,0,0,0.3);
+        width: 30px;
+        height: 30px;
+        z-index: 3000;
+    }
+
+    .plug-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid #4d4d4d;
+        padding: 10px 15px;
+        border-radius: 12px;
+        margin-top: 1px;
+        background-color: #929292b4;
+    }
+
+    .plug-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .circular-chart {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .circle-bg {
+        fill: none;
+        stroke: #eee;
+        stroke-width: 3.8;
+    }
+
+    .circle {
+        fill: none;
+        stroke: #00cc00;
+        stroke-width: 3.8;
+        stroke-linecap: round;
+    }
+
+    .plug-details {
+        flex-grow: 1;
+        padding-left: 12px;
+    }
+
+    .power {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .type-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        margin-top: 4px;
+        font-size: 12px;
+        background-color: #f0f0f0;
+        border-radius: 6px;
+        color: #444;
+    }
+
+    .stall-count {
+        text-align: right;
+        font-size: 14px;
+        color: #474747;
+    }
+
+    .card-body {
+        color: white !important;
+    }
+
+    .leaflet-touch .leaflet-control-layers-toggle {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    #forecast-slider-container {
+        position: fixed;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(75, 73, 73, 0.829);
+        /*border: 1px solid black;*/
+        padding: 14px 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(8px);
+        z-index: 1500;
+        text-align: center;
+        width: 90%;
+        max-width: 900px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    #forecast-slider-container.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .range-slider {
+        width: 100%;
+        height: 20px;
+        background-color: #a1a1a1;
+    }
+
+    .range-slider::-webkit-slider-thumb {
+        background-color: #000000; /* Your custom color */
+    }
+
+    .range-slider::-moz-range-thumb {
+        background-color: #000000; /* Same color */
+    }
+
+    .range-slider::-ms-thumb {
+        background-color: #000000;
+    }
+
+    label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0px !important;
+        color: #000000;
+    }
+
+    #forecast-slider-container label {
+        display: block;
+        margin-bottom: 10px !important;
+        font-weight: bold;
+        font-size: 15px;
+        color: #d3d3d3;
+    }
+
+    #forecast-slider-labels {
+        position: relative;
+        height: 20px;
+        margin-top: 0px;
+    }
+
+    .slider-label {
+        position: absolute;
+        transform: translateX(-50%);
+        font-size: 12px;
+        color: #d3d3d3;
+        white-space: nowrap;
+    }
+
+    .navbar-nav .nav-link.active {
+        font-weight: bold;
+        color: #13ac7e !important;
+        border-bottom: 1px solid #13ac7e;
+    }
+
+    .collapse.navbar-collapse {
+        position: relative !important;
+        z-index: 1200 !important;
+    }
+
+
+    .sidebar {
+        position: fixed;
+        top: 240px;
+        left: 8px;
+        display: flex;
+        flex-direction: column;
+        height: 40%;
+        flex-direction: column;
+        border-radius: 10px;
+        z-index: 1000;
+        background: #000000a9;
+        backdrop-filter: blur(12px);
+    }
+
+    .tab-btn {
+        background: #00000000;
+        color: rgb(255, 255, 255);
+        border: none;
+        padding: 8px;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .tab-panel {
+        position: fixed;
+        top: 240px;
+        left: 40px;
+        width: 300px;
+        min-width: 0px;
+        height: 40%;
+        border-top: 2px solid #000000;
+        border-right: 2px solid #000000;
+        border-bottom: 2px solid #000000;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.459);
+        border: 1px solid rgba(14, 12, 12, 0.534);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);  
+        color: white;
+        padding: 20px;
+        padding-top: 0px;
+        display: none;
+        overflow-y: auto;
+        z-index: 999;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    .plug-icon-box {
+        border: 2px solid transparent;
+        border-radius: 12px;
+        transition: border-color 0.3s ease;
+        margin-left: 3px;
+        padding-top: 5px;
+        text-align: center;
+        flex: 0 1 80px;
+    }
+
+    .plug-icon-box:hover {
+        border: 1px solid #005c61d0;
+        background-color: #007f867a;
+        cursor: pointer;
+    }
+
+    .plug-icon-box p {
+        display: inline-block;
+        width: 70px;
+        font-family: 'Inter', 'Google Sans', 'Roboto', sans-serif;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .plug-icon-box.selected-plug {
+        /*border-color: #006469cc;*/
+        background-color: #007f867a;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    img.plug-icon {
+        width: 30px;
+        height: 30px;
+    }
+
+    .tab-btn.active-tab {
+        background-color: #0079808a;
+        border-radius: 10px;
+    }
+
+    .sidebar-spacer {
+        flex-grow: 1;
+    }
+
+    .charger-icon {
+        width: 25px;
+        height: 37px;
+        margin-right: 10px;
+    }
+
+    .charger-icon-box {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+    }
+
+    .solar-legend {
+        display: flex;
+        flex-direction: column;
+        
+    }
+
+    .tab-header {
+        font-size: 16px;
+        font-weight: bold;
+        color: #000000;
+        text-align: center;
+        margin-bottom: 15px;
+        padding: 12px 0;
+        background-color: none;
+        border-bottom: #000000 solid 2px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .selected-car-box {
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 15px;
+        margin: 10px 0px 20px 0px;
+        width: 100%;
+        background: linear-gradient(to right, #003538, #727272);
+        border-radius: 12px;
+        color: #f3e5f5;
+        font-weight: bold;
+        font-size: 14px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .car-icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        margin-right: 12px;
+    }
+
+    .car-icon {
+        width: 30px;
+        height: auto;
+    }
+
+    .car-name {
+        flex-grow: 1;
+        text-align: left;
+    }
+
+    .swap-icon {
+        font-size: 18px;
+        color: #005257;
+        cursor: pointer;
+        margin-left: 10px;
+        transition: transform 0.2s ease;
+    }
+
+    .swap-icon:hover {
+        transform: scale(1.2);
+    }
+
+    .logo-icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 50px;
+        margin-right: 10px;
+        padding-top: 2px;
+    }
+
+    .logo-icon {
+        width: 100%;
+        height: auto;
+        border-radius: 50%;
+        /*box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);*/
+    }
+
+    .custom-microgrid-icon {
+        background-color: #2894a7de;
+        color: white;
+        font-weight: bold;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 30px;
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+        border: 2px solid #2894a7;
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+
+    .ranked-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+
+    .solar-efficiency-container {
+        padding: 5px;
+        margin-bottom: 5px;
+        border: 1px solid #000000;
+        border-radius: 10px;
+    }
+
+    .range-label-group {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 2px;
+    }
+
+    .range-label-group span {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        color: rgb(0, 0, 0);
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    #selectMap {
+        height: 300px; 
+        width: 70%; 
+        display: none;
+        margin: 20px auto;
+        border-radius: 10px;
+    }
+
+    #operatorMicrogridsContainer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px; /* spacing between cards */
+        justify-content: center; /* optional: center the cards horizontally */
+    }
+
+    .card_microgrid {
+        max-width: fit-content;
+        background-color: #000000af;
+        color: white;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: #007b81 !important;
+        color: rgb(255, 255, 255) !important;
+    }
+
+    .accordion-body {
+        background-color: #ffffff;
+        color: #000;
+    }
+
+    td {
+        background-color: #ffffff !important;
+        /*backdrop-filter: blur(10px) !important;*/
+        color: rgb(0, 0, 0) !important;
+        padding: 5px !important;
+        
+    }
+
+    .modal-body::-webkit-scrollbar { width: 8px; }
+    .modal-body::-webkit-scrollbar-thumb { background-color: #000; }
+    .modal-body::-webkit-scrollbar-thumb:hover { background-color: #222; }
+
+    .modal-body {
+        scrollbar-width: thin;
+        scrollbar-color: #b2b2b2 transparent;
+    }
+
+    .rounded-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    #toggleChargersBtn {
+        display: none;
+        position: fixed;
+        top: 35%;
+        right: 0;
+        z-index: 1000;
+        background-color: #8a8a8a75;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid #a5a5a5 !important;
+        border-right: none !important; 
+        color: white;
+        border: none;
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+        padding: 16px 4px;
+        font-size: 18px;
+        cursor: pointer;
+        transform: translateY(-50%);
+    }
+
+    .vehicle-card:hover {
+        background: linear-gradient(90deg, #003538, #727272);
+        transform: scale(1.02);
+        transition: all 0.2s ease;
+    }
+
+    .leaflet-control-layers-toggle {
+        background-image: none !important;
+        border: none !important;
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        font-size: 20px;
+        line-height: 26px;
+        color: black;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+        text-decoration: none !important;
+        border: none !important;
+        outline: none !important;
+    }
+
+    .leaflet-control-layers-toggle::before {
+        content: "\f278"; /* fa-map icon unicode */
+        color: rgb(51, 51, 51);
+        font-family: "Font Awesome 6 Free";
+        font-weight: 400;
+        display: inline-block;
+        font-style: normal;
+        text-decoration: none !important;
+        border: none !important;
+    }
+
+    /* Target the 2nd (overlay) layers toggle button */
+    .leaflet-control-layers.leaflet-control:nth-child(2) .leaflet-control-layers-toggle {
+        background-image: none !important;
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        font-size: 18px;
+        color: black;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+    }
+
+        /* Use fa-layer-group icon */
+    .leaflet-control-layers.leaflet-control:nth-child(2) .leaflet-control-layers-toggle::before {
+        content: "\f5fd"; /* Unicode for fa-layer-group */
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+    }
+
+    .leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+        display: none !important;
+    }
+
+    .tab-panel::-webkit-scrollbar {
+        display: none;
+    }
+
+    .text-info {
+        color: #007b81 !important;
+    }
+
+    .bg-secondary {
+        background-color: #007b81 !important;
+    }
+
+    .btn-primary {
+        background-color: #000000 !important;
+        border-color: #000000 !important;
+    }
+
+    .btn-primary:hover {
+        background-color: #0c8329 !important;
+        border-color: #0c8329 !important;
+    }
+
+        /* On small screens */
+    @media (max-width: 768px) {
+        #showMyChargersContainer {
+            position: fixed;
+            top: 35%;
+            right: -200px; /* start hidden */
+            transition: right 0.8s ease-in-out; /* ⭐ enables sliding */
+            transform: translateY(-50%);
+            z-index: 999;
+        }
+
+        #showMyChargersContainer.open {
+            right: 17px; /* or 0 if you want it flush to the edge */
+        }
+
+        #toggleChargersBtn {
+            display: block;
+            transition: right 0.8s ease-in-out;
+        }
+    }
+
+  </style>
+
+  <body>
+
+    <div id="ui-layer">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+          <!--<a class="navbar-brand" href="#">MicroGrid Map</a>-->
+          <div class="logo-icon-container">
+            <img src="/static/logo.png" alt="Logo Icon" class="logo-icon" />
+          </div>
+
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a class="nav-link active" href="#" onclick="showMapTab(this)">Map</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleForecastSlider(this)">Forecast</a>
+              </li>
+              <li class="nav-item" id="viewGridNavItem" style="display: none;">
+                <a class="nav-link" href="#" onclick="toggleViewMyGrid(this)">View My Grid</a>
+              </li>              
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                {% if session.get('user_id') %}
+                    <li class="nav-item">
+                        <a class="nav-link disabled">Hello, {{ session['username'] }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('signin') }}">Login</a>
+                    </li>
+                {% endif %}
+            </ul>
+          </div>
+        </div>
+        
+    </nav>
+    <div id="myGridContainer" style="display: none; padding: 20px;">
+        <div style="margin-top: 70px;">
+            <h2>My MicroGrids</h2>
+            <div id="operatorMicrogridsContainer" class="mb-4" style="margin-top: 20px;">
+                <!-- MicroGrids will be dynamically populated here -->
+            </div>
+
+                <!--<button class="btn btn-primary mb-4" onclick="scrollToCreateForm()">+ Create New MicroGrid</button>-->
+
+            <!-- The form will go here -->
+            <!-- Button to open modal -->
+            <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#createMicroGridModal">
+                    + Create New MicroGrid
+             </button>
+        </div>
+    </div>
+
+    <ul id="chargers-list"></ul>
+
+    <div id="map"></div>
+    
+    <!-- Origin and Destination Inputs -->
+    <form id="routeForm" style="position: absolute; top: 55px; left: 0.5%; z-index: 1000; width: 99%; max-width: 400px; min-width: 50px;">
+        <div class="dropdown position-relative mb-1">
+            <input class="form-control" type="search" id="origin" placeholder="Origin" autocomplete="off" aria-label="Origin">
+                <ul class="dropdown-menu w-100" id="originDropdown" onclick="event.stopPropagation();">
+                    <li><a class="dropdown-item" href="#" onclick="useCurrentLocation()">Current Location</a></li>
+                </ul>
+        </div>
+        <div class="dropdown input-group mb-0">
+          <input class="form-control" type="search" id="destination" placeholder="Destination" aria-label="Destination" aria-describedby="button-addon2">
+          <button class="btn btn-success" type="button" onclick="searchRoute()" id="button-addon2">Go</button>
+          </div ><ul class="dropdown-menu w-100" id="destinationDropdown" onclick="event.stopPropagation();"></ul></div>
+        </div>
+    </form>
+
+    <div id="mapToggles" style="position: relative">
+        <div id="showMyChargersContainer">
+            <div class="form-check form-switch form-check-reverse">
+                <input class="form-check-input" type="checkbox" id="loadAllChargers" onchange="toggleAllChargers(this.checked)">
+                <label class="form-check-label" for="flexSwitchCheckReverse">Show Chargers</label>
+            </div>
+            <div class="form-check form-switch form-check-reverse">
+                <input class="form-check-input" type="checkbox" id="toggleMicroGrids" onchange="toggleMicroGridOverlays(this.checked)">
+                <label class="form-check-label" for="flexSwitchCheckReverse">Show Microgrids</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toggle Button -->
+    <button id="toggleChargersBtn" onclick="toggleChargersPanel()">❮</button>
+
+    <div id="charger-card" class="card charger-info shadow-lg" style="display: none;">
+        <button class="close-btn" onclick="hideChargerInfo()">×</button>
+      
+        <div class="card-body">
+          <h5 class="card-title mb-1 fw-bold" id="charger-title"></h5>
+          <p class="text-muted small mb-2" id="charger-address" style="color: white !important;"></p>
+      
+          <div class="d-flex align-items-center mb-2">
+            <img id="charger-icon" src="/static/greenCharge.png" style="width: 20px; margin-right: 8px;" />
+            <span id="charger-type" class="text-secondary small" style="color: white !important;">Type</span>
+          </div>
+      
+          <div class="mb-3">
+            <div style="color: white !important;"><strong>Status:</strong> <span id="charger-status"></span></div>
+            <div style="color: white !important;"><strong>Power:</strong> <span id="charger-power"></span> kW</div>
+          </div>
+      
+          <p style="margin-bottom: 0px"><strong>Availabe plugs:</strong></p>
+          <div class="plug-info">
+            <div class="plug-icon">
+              <svg viewBox="0 0 36 36" class="circular-chart green">
+                <path class="circle-bg"
+                      d="M18 2.0845
+                         a 15.9155 15.9155 0 0 1 0 31.831
+                         a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle"
+                      stroke-dasharray="100, 100"
+                      d="M18 2.0845
+                         a 15.9155 15.9155 0 0 1 0 31.831
+                         a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+            </div>
+            <div class="plug-details">
+              <div class="power"><strong>50 kW</strong></div>
+              <div class="type-badge">CCS</div>
+            </div>
+            <div class="stall-count"><strong style="color: #00cc00;">1/1</strong> <br><span>stalls</span></div>
+          </div>
+      
+          <hr />
+      
+          <div class="d-flex justify-content-between small text-muted">
+            <div style="color: white !important;"><strong>Solar:</strong> <span id="charger-solar"></span>%</div>
+            <div style="color: white !important;"><strong>Grid:</strong> <span id="charger-grid"></span>%</div>
+          </div>
+          <div class="d-flex justify-content-between small text-muted mt-1">
+            <div style="color: white !important;"><strong>ETA:</strong> <span id="charger-eta">-</span> min</div>
+            <div style="color: white !important;"><strong>Eco Score:</strong> <span id="charger-eco">-</span></div>
+          </div>
+
+          <!-- Hidden fields inside your charger info panel -->
+          <span id="charger-lat" style="display:none;"></span>
+          <span id="charger-lng" style="display:none;"></span>
+
+          <div class="text-center">
+            <button id="navigateBtn" class="btn btn-success mt-3">
+            <i class="fa-solid fa-diamond-turn-right"></i></i> Navigate
+            </button>
+          </div>
+        </div>
+    </div>
+      
+    <div id="travelTime"></div>
+
+    <div id="routeInstructions"></div>
+
+    <div id="data-container">Loading data...</div>
+
+    <div id="forecast-slider-container">
+        <label id="forecast-interval-label" for="forecastHourSlider">Forecast for: </label>
+        <input type="range" id="forecastHourSlider" min="0" max="7" value="0" step="1" class="range-slider" list="forecastTicks" />
+        <div id="forecast-slider-labels" style="display: flex; justify-content: space-between; font-size: 12px; color: #333; margin-top: 6px;"></div>
+    </div>
+
+    <div class="sidebar">
+        <button class="tab-btn" data-tab="filters"><i class="fa-solid fa-filter"></i></button>
+        <button class="tab-btn" data-tab="vehicles"><i class="fa-solid fa-car-side"></i></button>
+        <button class="tab-btn" data-tab="preferences"><i class="fa-solid fa-sliders"></i></button>
+        <div class="sidebar-spacer"></div>
+        <button class="tab-btn" data-tab="info"><i class="fa-solid fa-circle-info"></i></button>
+      </div>
+      
+      <div class="tab-panel" id="filters"> 
+        <div id="plugTypesContainer">
+            <h6 class="tab-header">Filter Chargers</h6>
+            <div id="selectedCarBox" class="selected-car-box" style="display: none;">
+                <div class="car-icon-container">
+                    <img src="/static/car-selected.svg" alt="Car Icon" class="car-icon" />
+                </div>
+                <div class="car-name">Volkswagen e-Golf</div>
+                <i class="fas fa-right-left swap-icon"></i>
+            </div>
+
+            <div>
+                <p style="margin-bottom: 1px; margin-top: 5px; font-weight: bold; color: #000000; font-size: 16px;">Socket Types</p>
+            </div>
+            
+            <div class="d-flex text-center">
+                <div class="plug-icon-box" data-plug-type="Type 2" onclick="togglePlugFilter(this)">
+                    <img src="/static/plugs/Type_2.svg" class="plug-icon" />
+                    <p style="margin-bottom:0px; margin-top:5px;">Type-2</p>
+                </div>
+                <div class="plug-icon-box" data-plug-type="CCS2" onclick="togglePlugFilter(this)">
+                    <img src="/static/plugs/CCS.svg" class="plug-icon" />
+                    <p style="margin-bottom:0px; margin-top:5px;">CCS2</p>
+                </div>
+                <div class="plug-icon-box" data-plug-type="CHAdeMO" onclick="togglePlugFilter(this)">
+                    <img src="/static/plugs/CHAdeMO.svg" class="plug-icon" />
+                    <p style="margin-bottom:0px; margin-top:5px;">CHAdeMO</p>
+                </div>
+            </div>
+        </div>        
+      </div>
+      
+      <div class="tab-panel" id="vehicles">
+        <!-- Vehicle filter UI -->
+        <h6 class="tab-header">Add / Select Vehicle</h6>
+        <div id="vehiclePanelContent" style="text-align: center;">
+            
+            <!-- This will be populated dynamically by JavaScript -->
+        </div>
+          
+        </div>      
+      
+        <!-- Preferences Tab Panel (Sidebar) -->
+        <div class="tab-panel" id="preferences">
+            <form>
+            <h6 class="tab-header">Preferences</h6>
+        
+            <div class="range-label-group">
+                <label for="ec1">Derouting:</label>
+                <span><span id="range-value1">100</span> %</span>
+            </div>
+            <input type="range" id="ec1" name="ec1" min="0" max="100" value="100" class="range-slider" onchange="updateSlider(this.value, 'range-value1')"/><br />
+        
+            <div class="range-label-group">
+                <label for="ec2">Availability:</label>
+                <span><span id="range-value2">100</span> %</span>
+            </div>
+            <input type="range" id="ec2" name="ec2" min="0" max="100" value="100" class="range-slider" onchange="updateSlider(this.value, 'range-value2')"/><br />
+        
+            <div class="range-label-group">
+                <label for="ec3">Sustainable Charging:</label>
+                <span><span id="range-value3">100</span> %</span>
+            </div>
+            <input type="range" id="ec3" name="ec3" min="0" max="100" value="100" class="range-slider" onchange="updateSlider(this.value, 'range-value3')"/><br />
+        
+            <div class="range-label-group">
+                <label for="radius">Radius:</label>
+                <span><span id="range-value4">50</span> Km</span>
+            </div>
+            <input type="range" id="radius" name="radius" min="0" max="100" value="50" class="range-slider" onchange="updateSlider(this.value, 'range-value4')"/><br />
+            </form>
+        </div>
+
+        <div class="tab-panel" id="info">
+            <h6 class="tab-header">Solar Efficiency</h6>
+            <div class="solar-efficiency-container">
+                <div class="solar-legend">
+                    <strong style="color: #000000;">Chargers</strong>
+                    <div class="charger-icon-box">
+                        <img src="/static/greenCharge.png" class="charger-icon"/>
+                        <p style="display: inline; margin-bottom:0px; margin-top:5px;" class="type-badge">Solar: High</p>
+                    </div>
+                    <div class="charger-icon-box">
+                        <img src="/static/blackCharge.png" class="charger-icon"/>
+                        <p style="display: inline; margin-bottom:0px; margin-top:5px;" class="type-badge">Solar: Moderate</p>
+                    </div>
+                    <div class="charger-icon-box">
+                        <img src="/static/darkRedCharger.png" class="charger-icon"/>
+                        <p style="display: inline; margin-bottom:0px; margin-top:5px;" class="type-badge">Solar: Low</p>
+                    </div>
+                </div>
+            </div>
+            <div class="solar-efficiency-container">
+                <div class="solar-legend">
+                    <strong style="color: #000000;">MicroGrids</strong>
+                    <div style="margin-bottom: 10px; margin-left: 10px;">
+                        <span style="display:inline-block;width:16px;height:10px;background:#00cc44;margin-right:6px;"></span>
+                        <span class="type-badge">> 75%</span>
+                    </div>
+                    <div style="margin-bottom: 10px; margin-left: 10px;">
+                        <span style="display:inline-block;width:16px;height:10px;background:#66cc66;margin-right:6px;"></span>
+                        <span class="type-badge">50–75%</span>
+                    </div>
+                    <div style="margin-bottom: 10px; margin-left: 10px;">
+                        <span style="display:inline-block;width:16px;height:10px;background:#cccc66;margin-right:6px;"></span>
+                        <span class="type-badge">25–50%</span>
+                    </div>
+                    <div style=" margin-bottom: 10px; margin-left: 10px;">
+                        <span style="display:inline-block;width:16px;height:10px;background:#ff6666;margin-right:6px;"></span>
+                        <span class="type-badge">< 25%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+  
+     </div>
+
+        <div id="microgridCard" style="display: none; position: absolute; bottom: 10px; left: 10px; z-index: 999;"></div>
+
+        
+        <!-- Vehicle Modal -->
+        <div class="modal fade" id="vehicleModal" tabindex="-1" aria-labelledby="vehicleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm"> <!-- small modal -->
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="vehicleModalLabel">Select Your Vehicle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                <form id="vehicleForm">
+                    <label for="make">Make:</label>
+                    <select id="make" name="make" onchange="updateModels()" class="input-box" required>
+                    <option value="">Select Make</option>
+                    {% for make, models in vehicle_data.items() %}
+                    <option value="{{ make }}">{{ make }}</option>
+                    {% endfor %}
+                    </select>
+        
+                    <label for="model">Model:</label>
+                    <select id="model" name="model" class="input-box" required>
+                    <option value="">Select Model</option>
+                    </select>
+        
+                    <label for="batteryCapacity">Battery Capacity (kWh):</label>
+                    <input type="text" id="batteryCapacity" name="batteryCapacity" inputmode="numeric" class="input-box" readonly required/>
+        
+                    <label for="consumptionRate">Consumption Rate:</label>
+                    <input type="text" id="consumptionRate" name="consumptionRate" inputmode="numeric" class="input-box" readonly required/>
+
+                    <button type="button" class="btn btn-success w-100 mt-2" onclick="confirmVehicleSelection()">OK</button>                
+                </form>
+                </div>
+            </div>
+            </div>
+        </div>
+
+         <!-- Modal -->
+         <div class="modal fade" id="createMicroGridModal" tabindex="-1" aria-labelledby="createMicroGridModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl"> <!-- XL for full-width form -->
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="createMicroGridModalLabel">Create a New MicroGrid</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+        
+                <form id="microgridForm">
+                <div class="modal-body">
+                    <!-- Your input fields here -->
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">MicroGrid Name</label>
+                            <input name="name" class="form-control" placeholder="MicroGrid Name" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Installed Capacity</label>
+                            <input name="capacity_kwp" class="form-control" placeholder="Installed Capacity (kWp)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">City</label>
+                            <input name="city" class="form-control" placeholder="City" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Inverter Limit</label>
+                            <input name="inverter_limit" class="form-control" placeholder="Inverter Limit (kW)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Country</label>
+                            <input name="country" class="form-control" placeholder="Country" />
+                        </div>
+                        <div class="col-md-6" style="border-bottom: none;">
+                            <label for="name" class="form-label">Degradation Rate</label>
+                            <input name="degradation_rate" class="form-control" placeholder="Degradation Rate (% per year)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Latitude</label>
+                            <input name="microgrid_lat" id="microgrid_lat_input" class="form-control" placeholder="Latitude">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Efficiency</label>
+                            <input name="efficiency" class="form-control" placeholder="Efficiency (0.85 = 85%)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Longitude</label>
+                            <input name="microgrid_lng" id="microgrid_lng_input" class="form-control" placeholder="Longitude">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Annual Production</label>
+                            <input name="annual_production" class="form-control" placeholder="Annual Production (kWh)" />
+                        </div>
+                    </div>
+                    <div id="microgridMapContainer" style="display: none;">
+                        <div class="text-muted small mt-1">
+                            Click on the map to set the MicroGrid's exact coordinates.
+                        </div>
+                        <div id="microgridMap" style="height: 300px; width: 70%; margin: 5px auto; border-radius: 10px;"></div>
+                        <p id="microgridCoordinates" class="mt-2 text-muted"></p>
+                        <input type="hidden" id="microgrid_lat" name="microgrid_lat">
+                        <input type="hidden" id="microgrid_lng" name="microgrid_lng">
+                    </div>
+                    <button type="button" class="btn btn-success mb-3" onclick="addChargerInput()" style="margin-top: 10px;">Add Charger</button>
+                    <div id="chargerInputsContainer" class="mb-3"></div>
+                    <div class="text-danger mb-2" id="chargerError" style="display: none;">Please add up to 3 chargers.</div>
+                    <div class="text-muted small mt-1">
+                        Click on the map to set the Charger's exact coordinates.
+                    </div>
+
+                    <div id="selectMapContainer" style="display: none; height: 300px;">
+                        <div id="selectMap"></div>
+                    </div>
+                    <div id="map-coordinates" style="width: 50%; margin: 10px auto; padding: 8px; background: #f0f0f0; border-radius: 6px; font-size: 14px;"></div>
+                </div>
+        
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Save MicroGrid</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+                </form>
+            </div>
+            </div>
+        </div>
+
+        <!-- Microgrid Details Modal -->
+        <div class="modal fade" id="microgridModal" tabindex="-1" aria-labelledby="microgridModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content text-black">
+                <div class="modal-header pb-0 border-0">
+                    <ul class="nav nav-tabs w-100" id="microgridTabs" role="tablist">
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link active" style = "color: #000000;" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                          Overview
+                        </button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link" style = "color: #007b81;" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button" role="tab">
+                          Production Stats
+                        </button>
+                      </li>
+                    </ul>
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-2" data-bs-dismiss="modal"></button>
+                  </div>
+                  
+                  <div class="modal-body tab-content">
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                      <div id="microgridModalBody"></div>
+                    </div>
+                  
+                    <!-- Charts Tab -->
+                    <div class="tab-pane fade" id="charts" role="tabpanel">
+                        <h5 class="text-info">Production Stats</h5>
+                        <div id="monthlyChart" style="height: 300px; margin-top: 20px;"></div>
+                        <div id="hourlyChart" style="height: 300px; margin-top: 20px;"></div>
+                    </div>
+                  </div>
+                  
+                <div class="modal-footer">
+                    <button class="btn btn-warning" onclick="editMicrogrid(cachedMicrogridData.microgrid.group_id)">Modify</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editMicrogridModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form id="editMicrogridForm" onsubmit="submitMicrogridUpdate(); return false;">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Edit Microgrid</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="hidden" id="edit_group_id">
+                    <label>City</label>
+                    <input class="form-control" id="edit_city">
+                    <label>Country</label>
+                    <input class="form-control" id="edit_country">
+                    <label>Capacity (kWp)</label>
+                    <input class="form-control" id="edit_capacity" type="number">
+                    <label>Efficiency</label>
+                    <input class="form-control" id="edit_efficiency" type="number" step="0.01">
+                    <label>Inverter Limit (kW)</label>
+                    <input class="form-control" id="edit_inverter" type="number" step="0.1">
+                    <label>Degradation Rate (%)</label>
+                    <input class="form-control" id="edit_degradation" type="number" step="0.1">
+                  </div>
+                  <div class="modal-footer">
+                    <button class="btn btn-success" type="submit">Save</button>
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editChargerModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form id="editChargerForm" onsubmit="submitChargerUpdate(); return false;">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Edit Charger</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="hidden" id="edit_charger_id">
+                    <label>Location Name</label>
+                    <input class="form-control" id="edit_location_name">
+                    <label>Address</label>
+                    <input class="form-control" id="edit_address">
+                    <label>Power (kW)</label>
+                    <input class="form-control" id="edit_power" type="number" step="0.1">
+                    <label>Available</label>
+                    <select class="form-control" id="edit_available">
+                      <option value="1">Yes</option>
+                      <option value="0">No</option>
+                    </select>
+                    <label>Stalls</label>
+                    <input class="form-control" id="edit_stalls" type="number">
+                  </div>
+                  <div class="modal-footer">
+                    <button class="btn btn-success" type="submit">Save</button>
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+        </div>
+          
+          
+  
+    <script>
+        let allChargers = [];
+        let allChargerMarkers = [];
+        let selectChargerMarkers = [];
+        let nearbyChargerMarkers = [];
+        let microGridLayers = [];
+        var taxiMarker = null;
+        var routingControl = null;
+        const apiKey = '50bf2c5a75636772ee020a9c2cc969db';
+        const chargerForecastCache = {};  // { charger_id: forecast.list }
+        let selectedCharger = null;
+        let selectMap = null;
+        let chargerCount = 0;
+        const maxChargers = 3;
+        let activeChargerInputIndex = null;
+        let addChargerMarkers = [];
+        let microgridMap = null;
+        let microgridMarker = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const originInput = document.getElementById("origin");
+            const originDropdown = document.getElementById("originDropdown");
+
+            originInput.addEventListener("input", async function () {
+                const query = this.value.trim();
+
+                if (query.length < 1) {
+                originDropdown.style.display = "none";
+                return;
+                }
+
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=cy`);
+                const results = await response.json();
+
+                results.slice(0, 5).forEach(place => {
+                const li = document.createElement("li");
+                li.className = "dropdown-item";
+                li.textContent = place.display_name;
+                li.onclick = (event) => {
+                    event.stopPropagation(); 
+                    originInput.value = place.display_name;
+                    originDropdown.style.display = "none";
+                };
+                originDropdown.appendChild(li);
+                });
+
+                originDropdown.style.display = results.length ? "block" : "none";
+            });
+
+            document.addEventListener("click", function (event) {
+                if (!originInput.contains(event.target) && !originDropdown.contains(event.target)) {
+                originDropdown.style.display = "none";
+                }
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const destinationInput = document.getElementById("destination");
+            const dropdown = document.getElementById("destinationDropdown");
+
+            destinationInput.addEventListener("input", async function () {
+                const query = this.value.trim();
+                dropdown.innerHTML = "";
+
+                if (query.length < 3) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=cy`);
+                const results = await res.json();
+
+                results.slice(0, 5).forEach(place => {
+                    const li = document.createElement("li");
+                    li.className = "dropdown-item";
+                    li.textContent = place.display_name;
+                    li.addEventListener("click", function () {
+                        destinationInput.value = place.display_name;
+                        dropdown.innerHTML = "";
+                        dropdown.style.display = "none";
+                    });
+                    dropdown.appendChild(li);
+                });
+
+                dropdown.style.display = results.length ? "block" : "none";
+            });
+
+            document.addEventListener("click", function (e) {
+                if (!destinationInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = "none";
+                }
+            });
+        });
+
+        function toggleChargersPanel() {
+            const panel = document.getElementById("showMyChargersContainer");
+            const button = document.getElementById("toggleChargersBtn");
+
+            const isOpen = panel.classList.toggle("open");
+            button.textContent = isOpen ? "❯" : "❮"; // Flip arrow
+        }
+
+        function editMicrogrid(groupId) {
+        fetch(`/api/microgrid/${groupId}`)
+            .then(res => res.json())
+            .then(data => {
+            document.getElementById("edit_group_id").value = groupId;
+            document.getElementById("edit_city").value = data.city;
+            document.getElementById("edit_country").value = data.country;
+            document.getElementById("edit_capacity").value = data.capacity_kwp;
+            document.getElementById("edit_efficiency").value = data.efficiency;
+            document.getElementById("edit_inverter").value = data.inverter_limit;
+            document.getElementById("edit_degradation").value = data.degradation;
+
+            new bootstrap.Modal(document.getElementById("editMicrogridModal")).show();
+            });
+        }
+
+        function submitMicrogridUpdate() {
+            const payload = {
+                group_id: document.getElementById("edit_group_id").value,
+                city: document.getElementById("edit_city").value,
+                country: document.getElementById("edit_country").value,
+                capacity_kwp: parseFloat(document.getElementById("edit_capacity").value),
+                efficiency: parseFloat(document.getElementById("edit_efficiency").value),
+                inverter_limit: parseFloat(document.getElementById("edit_inverter").value),
+                degradation: parseFloat(document.getElementById("edit_degradation").value)
+            };
+
+            fetch('/api/update_microgrid', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                alert("Microgrid updated!");
+                location.reload();
+                } else {
+                alert("Update failed.");
+                }
+            });
+        }
+
+        function editCharger(chargerId) {
+            fetch(`/api/charger/${chargerId}`)
+                .then(res => res.json())
+                .then(data => {
+                document.getElementById("edit_charger_id").value = chargerId;
+                document.getElementById("edit_location_name").value = data.location_name;
+                document.getElementById("edit_address").value = data.address;
+                document.getElementById("edit_power").value = data.power;
+                document.getElementById("edit_available").value = data.available;
+                document.getElementById("edit_stalls").value = data.stalls;
+
+                new bootstrap.Modal(document.getElementById("editChargerModal")).show();
+                });
+        }
+
+        function submitChargerUpdate() {
+            const payload = {
+                charger_id: document.getElementById("edit_charger_id").value,
+                location_name: document.getElementById("edit_location_name").value,
+                address: document.getElementById("edit_address").value,
+                power: parseFloat(document.getElementById("edit_power").value),
+                available: parseInt(document.getElementById("edit_available").value),
+                stalls: parseInt(document.getElementById("edit_stalls").value)
+            };
+
+            fetch('/api/update_charger', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                alert("Charger updated!");
+                location.reload();
+                } else {
+                alert("Update failed.");
+                }
+            });
+        }
+
+
+        function initSelectMap() {
+            selectMap = L.map("selectMap").setView([35.1856, 33.3823], 10);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(selectMap);
+
+            selectMap.on("click", function (e) {
+                const { lat, lng } = e.latlng;
+                console.log("Clicked on map at", e.latlng);
+
+                const coordBox = document.getElementById("map-coordinates");
+                if (coordBox) {
+                    coordBox.textContent = `Selected Coordinates: Latitude ${lat.toFixed(5)}, Longitude ${lng.toFixed(5)}`;
+                }
+
+                //if (activeChargerInputIndex === null) return;
+//
+                //// Place marker
+                //if (addChargerMarkers[activeChargerInputIndex]) {
+                //    addChargerMarkers[activeChargerInputIndex].setLatLng(e.latlng);
+                //} else {
+                //    const marker = L.marker(e.latlng).addTo(selectMap);
+                //    addChargerMarkers[activeChargerInputIndex] = marker;
+                //}
+
+                // Fill input fields
+                document.querySelector(`input[name='charger_lat_${activeChargerInputIndex}']`).value = lat.toFixed(6);
+                document.querySelector(`input[name='charger_lng_${activeChargerInputIndex}']`).value = lng.toFixed(6);
+            });
+        }
+
+        function initMicrogridMap() {
+            microgridMap = L.map("microgridMap").setView([35.1856, 33.3823], 9);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(microgridMap);
+
+            microgridMap.on("click", function (e) {
+            const { lat, lng } = e.latlng;
+
+            if (microgridMarker) {
+                microgridMarker.setLatLng(e.latlng);
+            } else {
+                // Make it draggable!
+                microgridMarker = L.marker(e.latlng, { draggable: true }).addTo(microgridMap);
+
+                // Listen for dragend to update lat/lng fields
+                microgridMarker.on("dragend", function (e) {
+                    const newLatLng = e.target.getLatLng();
+                    updateLatLngFields(newLatLng.lat, newLatLng.lng);
+                });
+            }
+
+            updateLatLngFields(lat, lng);
+        });
+
+        function updateLatLngFields(lat, lng) {
+            document.getElementById("microgrid_lat").value = lat.toFixed(6);
+            document.getElementById("microgrid_lng").value = lng.toFixed(6);
+            document.getElementById("microgrid_lat_input").value = lat.toFixed(6);
+            document.getElementById("microgrid_lng_input").value = lng.toFixed(6);
+        }
+    }
+
+        document.getElementById('createMicroGridModal').addEventListener('shown.bs.modal', function () {
+            document.getElementById("microgridMapContainer").style.display = "block";
+
+            setTimeout(() => {
+                if (!microgridMap) {
+                    initMicrogridMap();
+                } else {
+                    microgridMap.invalidateSize();
+                }
+            }, 50); // Wait a bit for rendering
+
+            if (!selectMap) {
+                initSelectMap();
+            } else {
+                setTimeout(() => {
+                    selectMap.invalidateSize();
+                }, 100);
+            }
+        });
+
+        async function fetchChargerTypes() {
+            const res = await fetch('/api/charger_types');
+            return res.json(); // [{id: 1, name: 'abb'}, ...]
+        }
+
+        function addChargerInput() {
+            const currentIndex = chargerCount;
+
+            if (chargerCount >= maxChargers) {
+                document.getElementById("chargerError").style.display = "block";
+                return;
+            }
+
+            else {
+                document.getElementById("chargerError").style.display = "none";
+            }
+
+            const container = document.getElementById("chargerInputsContainer");
+
+            const row = document.createElement("div");
+            row.classList.add("card", "p-3", "mb-3");
+            row.innerHTML = `
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <label for="charger_lat_${chargerCount}" class="form-label">Latitude</label>
+                        <input name="charger_lat_${chargerCount}" class="form-control" placeholder="Latitude">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="charger_lng_${chargerCount}" class="form-label">Longitude</label>
+                        <input name="charger_lng_${chargerCount}" class="form-control" placeholder="Longitude">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="charger_location_${chargerCount}" class="form-label">Location</label>
+                        <input name="charger_location_${chargerCount}" class="form-control" placeholder="Location Name">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="charger_address_${chargerCount}" class="form-label">Address</label>
+                        <input name="charger_address_${chargerCount}" class="form-control" placeholder="Address">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="charger_available_${chargerCount}" class="form-label">Available</label>
+                        <input name="charger_available_${chargerCount}" class="form-control" placeholder="Yes/No">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="charger_stalls_${chargerCount}" class="form-label">Stalls</label>
+                        <input name="charger_stalls_${chargerCount}" class="form-control" placeholder="Stalls">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="charger_power_${chargerCount}" class="form-label">Power</label>
+                        <input name="charger_power_${chargerCount}" class="form-control" placeholder="Power (kW)">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="charger_types_${chargerCount}" class="form-label">Charger Type</label>
+                        <select id="charger_types_${currentIndex}" name="charger_types_${currentIndex}" class="form-select">
+                            <option disabled selected>Select Charger Type</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-center">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeChargerRow(this)">Remove</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+
+            fetchChargerTypes().then(types => {
+                const select = document.getElementById(`charger_types_${currentIndex}`);
+
+                types.forEach(type => {
+                    const opt = document.createElement("option");
+                    opt.value = type.id;
+                    opt.textContent = type.name;
+                    select.appendChild(opt);
+                });
+            });
+
+            const defaultLatLng = selectMap.getCenter();
+            const marker = L.marker(defaultLatLng, { draggable: true }).addTo(selectMap);
+            addChargerMarkers[currentIndex] = marker;
+
+            row.querySelector(`input[name='charger_lat_${currentIndex}']`).value = defaultLatLng.lat.toFixed(6);
+            row.querySelector(`input[name='charger_lng_${currentIndex}']`).value = defaultLatLng.lng.toFixed(6);
+
+            marker.on('dragend', function (e) {
+                const newLatLng = e.target.getLatLng();
+                row.querySelector(`input[name='charger_lat_${currentIndex}']`).value = newLatLng.lat.toFixed(6);
+                row.querySelector(`input[name='charger_lng_${currentIndex}']`).value = newLatLng.lng.toFixed(6);
+
+                const coordBox = document.getElementById("map-coordinates");
+                if (coordBox) {
+                    coordBox.textContent = `Selected Coordinates: Latitude ${newLatLng.lat.toFixed(5)}, Longitude ${newLatLng.lng.toFixed(5)}`;
+                }
+            });
+
+            row.querySelector(`input[name='charger_lat_${currentIndex}']`).addEventListener("focus", () => {
+                activeChargerInputIndex = currentIndex;
+            });
+            row.querySelector(`input[name='charger_lng_${currentIndex}']`).addEventListener("focus", () => {
+                activeChargerInputIndex = currentIndex;
+            });
+
+            chargerCount++;
+
+            const mapContainer = document.getElementById("selectMapContainer");
+            mapContainer.style.display = "block";
+
+            if (!selectMap) {
+                initSelectMap();
+            } else {
+                setTimeout(() => selectMap.invalidateSize(), 200);
+            }
+        }
+
+        function removeChargerRow(button) {
+            const card = button.closest(".card");
+            const inputs = card.querySelectorAll("input");
+
+            // Extract the charger index from the input name (e.g., charger_lat_0)
+            let index = null;
+            inputs.forEach(input => {
+                const match = input.name.match(/charger_lat_(\d+)/);
+                if (match) index = parseInt(match[1]);
+            });
+
+            // Remove marker if it exists
+            if (index !== null && addChargerMarkers[index]) {
+                selectMap.removeLayer(addChargerMarkers[index]);
+                addChargerMarkers[index] = null; // optional: clean up reference
+            }
+
+            // Remove the card
+            card.remove();
+            chargerCount--;
+
+            if (chargerCount < maxChargers) {
+                document.getElementById("chargerError").style.display = "none";
+            }
+
+            if (chargerCount === 0) {
+                document.getElementById("selectMapContainer").style.display = "none";
+            }
+        }
+
+        const months = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+
+
+        function loadMyMicrogrids() {
+            fetch("/api/my_microgrids")
+                .then(res => res.json())
+                .then(microgrids => {
+                    const container = document.getElementById("operatorMicrogridsContainer");
+                    container.innerHTML = "";
+
+                    if (!microgrids || microgrids.length === 0) {
+                        container.innerHTML = "<p>No MicroGrids created yet.</p>";
+                        return;
+                    }
+
+                    microgrids.forEach(grid => {
+                        const div = document.createElement("div");
+                        div.classList.add("card", "mb-2", "p-3", "card_microgrid");
+                        div.innerHTML = `
+                            <h5>${grid.name}</h5>
+                            <p><strong>City:</strong> ${grid.city} | <strong>Country:</strong> ${grid.country}</p>
+                            <p><strong>Capacity:</strong> ${grid.capacity_kwp} kWp | <strong>Efficiency:</strong> ${(grid.efficiency * 100).toFixed(0)}%</p>
+                            <button class="btn btn-sm btn-outline-info" onclick="showMicrogridModal(${grid.group_id})" >View Details</button>
+                        `;
+                        container.appendChild(div);
+                    });
+                });
+        }
+
+        document.getElementById("microgridForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const form = new FormData(e.target);
+
+            const chargers = [];
+            for (let i = 0; i < chargerCount; i++) {
+                const lat = parseFloat(form.get(`charger_lat_${i}`));
+                const lng = parseFloat(form.get(`charger_lng_${i}`));
+                const location = form.get(`charger_location_${i}`);
+                const address = form.get(`charger_address_${i}`);
+                const available = parseInt(form.get(`charger_available_${i}`));
+                const stalls = parseInt(form.get(`charger_stalls_${i}`));
+                const power = parseFloat(form.get(`charger_power_${i}`));
+                const types = [];
+                const typeSelect = document.querySelector(`select[name='charger_types_${i}']`);
+                for (const opt of typeSelect.selectedOptions) {
+                    types.push(parseInt(opt.value));
+                }
+
+                // Check for any missing or invalid field
+                if (
+                    isNaN(lat) || isNaN(lng) ||
+                    !location || !address ||
+                    isNaN(available) || isNaN(stalls) || isNaN(power)
+                ) {
+                    alert(`Please fill in all fields for charger ${i + 1}.`);
+                    return;
+                }
+
+                chargers.push({ lat, lng, location, address, available, stalls, power, types });
+            }
+
+            if (chargers.length === 0) {
+                alert("Please add at least one charger before submitting.");
+                return;
+            }
+
+            const requiredFields = [
+                "name", "city", "country", "capacity_kwp",
+                "efficiency", "inverter_limit", "degradation_rate",
+                "annual_production", "microgrid_lat", "microgrid_lng"
+            ];
+
+            for (const field of requiredFields) {
+                const value = form.get(field);
+                if (!value || value.trim() === "") {
+                    alert(`Please fill in the ${field.replace(/_/g, " ")} field.`);
+                    return;
+                }
+            }
+
+            const payload = {
+                name: form.get("name"),
+                city: form.get("city"),
+                country: form.get("country"),
+                capacity_kwp: parseFloat(form.get("capacity_kwp")),
+                efficiency: parseFloat(form.get("efficiency")),
+                inverter_limit: parseFloat(form.get("inverter_limit")),
+                degradation_rate: parseFloat(form.get("degradation_rate")),
+                annual_production: parseFloat(form.get("annual_production")),
+                latitude: parseFloat(form.get("microgrid_lat")),
+                longitude: parseFloat(form.get("microgrid_lng")),
+                chargers
+            };
+
+            fetch("/api/create_microgrid", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert("MicroGrid created with GroupID: " + data.group_id);
+                location.reload();
+            });
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById("createMicroGridModal"));
+            modal.hide();
+        });
+
+        document.getElementById('createMicroGridModal')
+        .addEventListener('shown.bs.modal', function () {
+            if (!selectMap) {
+                initSelectMap();
+            } else {
+                setTimeout(() => {
+                    selectMap.invalidateSize();
+                }, 100);
+            }
+        });
+
+        function smooth(values, factor = 0.3) {
+            return values.map((v, i, arr) => {
+                if (i === 0) return v;
+                return arr[i - 1] * (1 - factor) + v * factor;
+            });
+        }
+
+        function renderProductionCharts(production, group_id) {
+            // Monthly Chart
+            const monthLabels = Object.keys(production.monthly);
+            const monthValues = Object.values(production.monthly);
+
+            Plotly.newPlot('monthlyChart', [{
+                x: monthLabels,
+                y: monthValues,
+                type: 'bar',
+                marker: { color: '#5bb0b4' }
+            }], {
+                title: 'Monthly Production (kWh)',
+                paper_bgcolor: '#ffffff',
+                plot_bgcolor: '#ffffff',
+                font: { color: '#000' },
+                height: 250,
+                margin: {
+                    t: 50,   
+                    b: 20,   
+                    l: 60,   
+                    r: 60    
+                }
+            });
+
+            // Hourly Chart
+            fetch(`/api/microgrid_hourly_today/${group_id}`)
+                .then(res => res.json())
+                .then(data => {
+                    const actualHours = Object.keys(data.actual)
+                        .map(h => parseInt(h))
+                        .sort((a, b) => a - b); 
+                    const actualValues = actualHours.map(h => data.actual[h]);
+                    const cloudValues = actualHours.map(h => data.clouds[h] || "?");
+                    const theoreticalValues = actualHours.map(h => data.theoretical[h] ?? 0);
+                    const xLabels = actualHours.map(h => `${h}:00`);
+
+                    Plotly.newPlot('hourlyChart', [
+                    {
+                        x: xLabels,
+                        y: actualValues,
+                        name: "Actual Generation",
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        text: cloudValues.map(c => `Clouds: ${c}`),
+                        hovertemplate: 'Hour: %{x}<br>Actual: %{y:.2f} kWh<br>%{text}<extra></extra>',
+                        line: { color: '#007b81', width: 3 }
+                    },
+                    {
+                        x: xLabels,
+                        y: theoreticalValues,
+                        name: "Max Possible (No Clouds)",
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        hoverlabel: {
+                            font: { color: 'white' }
+                        },
+                        line: { color: 'grey', dash: 'dash' }
+                    }
+                    ], {
+                    title: "Today's Measured vs Theoretical Generation (kWh)",
+                    paper_bgcolor: '#ffffff',
+                    plot_bgcolor: '#ffffff',
+                    font: { color: '#000' },
+                    yaxis: { title: 'kWh' },
+                    xaxis: { title: 'Hour' },
+                    legend: {
+                        orientation: "h",
+                        x: 0.5,
+                        y: 1.1,
+                        xanchor: "center",
+                        yanchor: "bottom",
+                        }
+                    });
+                });
+        }
+
+        function loadSelectableChargersForMicroGrid() {
+            fetch("/api/chargers")
+                .then(res => res.json())
+                .then(chargers => {
+                    console.log("Loaded chargers:", chargers);
+                    if (selectChargerMarkers.length > 0) {
+                        selectChargerMarkers.forEach(m => selectMap.removeLayer(m));
+                        selectChargerMarkers = [];
+                    }
+                    chargers.forEach(charger => {
+                        const marker = L.marker([charger.latitude, charger.longitude]).addTo(selectMap);
+                        marker.on("click", () => toggleChargerSelection(charger.charger_id, marker));
+                        selectChargerMarkers.push(marker);
+                    });
+                });
+        }
+
+        let cachedMicrogridData = null;
+        function showMicrogridModal(groupId) {
+        fetch(`/api/microgrid_details/${groupId}`)
+            .then(res => res.json())
+            .then(data => {
+                console.log("Microgrid API Response:", data);
+            cachedMicrogridData = data;
+            const m = data.microgrid;
+            const chargers = data.chargers;
+            let html = `
+                <h5 class="text-info mb-3"><i class="bi bi-lightning"></i> Microgrid Summary</h5>
+                <table class="table rounded-table text-white">
+                    <tbody>
+                        <tr><td><strong>City:</strong></td><td>${m.city}</td></tr>
+                        <tr><td><strong>Country:</strong></td><td>${m.country}</td></tr>
+                        <tr><td><strong>Latitude:</strong></td><td>${m.latitude.toFixed(5)}</td></tr>
+                        <tr><td><strong>Longitude:</strong></td><td>${m.longitude.toFixed(5)}</td></tr>
+                        <tr><td><strong>Installed Capacity:</strong></td><td>${m.capacity_kwp} kWp</td></tr>
+                        <tr><td><strong>Efficiency:</strong></td><td>${m.efficiency}%</td></tr>
+                        <tr><td><strong>Inverter Limit:</strong></td><td>${m.inverter_limit_kw} kW</td></tr>
+                        <tr><td><strong>Degradation Rate:</strong></td><td>${m.degradation_rate}%</td></tr>
+                    </tbody>
+                </table>
+                <h5 class="text-info"><i class="bi bi-plug"></i> Chargers</h5>
+                <div class="accordion" id="chargersAccordion">
+                `;
+                chargers.forEach((c, i) => {
+                html += `
+                    <div class="accordion-item text-light">
+                    <h2 class="accordion-header" id="heading${i}">
+                        <button class="accordion-button bg-secondary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${i}">
+                        ${c.location_name || "N/A"} (${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)})
+                        </button>
+                    </h2>
+                    <div id="collapse${i}" class="accordion-collapse collapse ${i === 0 ? 'show' : ''}" data-bs-parent="#chargersAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Address:</strong> ${c.address || "N/A"}</p>
+                            <p><strong>Power:</strong> ${c.power} kW</p>
+                            <p><strong>Available:</strong> ${c.available ? 'Yes' : 'No'}</p>
+                            <p><strong>Stalls:</strong> ${c.stalls || 'N/A'}</p>
+                            <p><strong>Plug Types:</strong> ${c.plug_types.join(', ') || 'None'}</p>
+                            <button class="btn btn-warning btn-sm mt-2" onclick="editCharger(${c.id})">Modify</button>
+                        </div>
+                        
+                    </div>
+                    </div>
+                `;
+                });
+                html += `</div>`;
+            document.getElementById("microgridModalBody").innerHTML = html;
+            const modal = new bootstrap.Modal(document.getElementById("microgridModal"));
+            modal.show();
+            });
+
+            document.getElementById("charts-tab").addEventListener("click", () => {
+            if (cachedMicrogridData) {
+                renderProductionCharts(cachedMicrogridData.production, cachedMicrogridData.microgrid.group_id);
+            }
+            });
+        }
+
+        const selectedChargers = new Set();
+
+        function toggleChargerSelection(chargerId, marker) {
+            if (selectedChargers.has(chargerId)) {
+                selectedChargers.delete(chargerId);
+                marker.setIcon(defaultIcon);  // Unselect
+            } else {
+                selectedChargers.add(chargerId);
+                marker.setIcon(selectedIcon); // Select
+            }
+
+            document.getElementById("selectedChargerIds").value = Array.from(selectedChargers).join(",");
+            updateSelectedChargerList();
+        }
+
+        function updateSelectedChargerList() {
+            const container = document.getElementById("selectedChargerList");
+            container.innerHTML = "Selected Charger IDs: " + Array.from(selectedChargers).join(", ");
+        }
+
+        // Define default and selected icons
+        const defaultIcon = L.icon({
+            iconUrl: '/static/leaflet/images/marker-icon.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41]
+        });
+
+        const selectedIcon = L.icon({
+            iconUrl: '/static/redCharger.png',
+            iconSize: [27, 41],
+            iconAnchor: [12, 41]
+        });
+
+
+        document.querySelector('.navbar').addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const originInput = document.getElementById("origin");
+            
+            originInput.addEventListener("click", () => {
+                if (originDropdown.children.length > 0) {
+                    originDropdown.style.display = "block";
+                }
+            });
+
+            /*document.addEventListener("click", function (event) {
+                if (!originInput.contains(event.target) && !document.getElementById("originDropdown").contains(event.target)) {
+                    dropdownInstance.hide();
+                }
+            });*/
+        });
+
+        let forecastTimeList = [];
+
+        async function populateForecastDropdown() {
+            // Wait until forecast data is loaded
+            if (Object.keys(chargerForecastCache).length === 0) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // Use forecast from the first available charger
+            const firstChargerId = Object.keys(chargerForecastCache)[0];
+            if (!firstChargerId) {
+                console.error("No forecast data available.");
+                return;
+            }
+
+            const forecastFullList = chargerForecastCache[firstChargerId];
+            forecastTimeList = forecastFullList.slice(0, 9); // Next 27h (9 x 3h intervals)
+
+            const slider = document.getElementById("forecastHourSlider");
+            const label = document.getElementById("forecast-interval-label");
+            const labelContainer = document.getElementById("forecast-slider-labels");
+
+            slider.max = forecastTimeList.length - 1;
+            labelContainer.innerHTML = "";
+
+            forecastTimeList.forEach((entry, index) => {
+                const timeLabel = document.createElement("span");
+                timeLabel.textContent = entry.dt_txt.split(" ")[1].slice(0, 5); // e.g. "12:00"
+                timeLabel.classList.add("slider-label");
+
+                const percent = (index / (forecastTimeList.length - 1)) * 100;
+                timeLabel.style.left = `${percent}%`;
+
+                labelContainer.appendChild(timeLabel);
+            });
+
+            let forecastInitialized = false;
+
+            slider.addEventListener("input", function () {
+                const index = parseInt(this.value);
+                label.textContent = `Forecast for: ${forecastTimeList[index].dt_txt}`;
+                if (!forecastInitialized) forecastInitialized = true;
+                forecastAndColorAllChargers(index);
+            });
+
+            label.textContent = `Forecast for: ${forecastTimeList[0].dt_txt}`;
+        }
+
+        async function toggleMicroGridOverlays(checked) {
+            if (checked) {
+                const [clustersRes, solarRes] = await Promise.all([
+                    fetch("/api/microgrids"),
+                    fetch("/api/microgrid_solar_scores")
+                ]);
+                const clusters = await clustersRes.json();
+                const solarMap = await solarRes.json();
+
+                Object.entries(clusters).forEach(([groupID, chargers]) => {
+                    const latlngs = chargers.map(c => [c.lat, c.lon]);
+                    const bounds = L.latLngBounds(latlngs);
+                    const center = bounds.getCenter();
+
+                    const avgSolar = solarMap[groupID] || 0;
+                    const fillColor = getSolarColor(avgSolar);
+                    const fillOpacity = avgSolar > 0 ? Math.min(0.6, avgSolar / 100) : 0.2;
+
+                    const smoothCorners = getSmoothedRectangle(bounds);
+                    const rect = L.polygon(smoothCorners, {
+                        color: "#0a4611",
+                        weight: 1,
+                        fillColor,
+                        fillOpacity,
+                        dashArray: "4 2"
+                    }).on('click', () => {
+                        showMicrogridCard({
+                            group_id: groupID,
+                            avg_score: avgSolar,
+                            count: chargers.length
+                        });
+                    });
+
+                    rect.addTo(map);
+                    microGridLayers.push(rect);
+
+                    // circle marker in center
+                    const marker = L.circleMarker(center, {
+                        radius: 2,
+                        color: 'black',
+                        fillColor: 'black',
+                        fillOpacity: 1.0,
+                        weight: 2
+                    });
+
+                    marker.on('click', () => {
+                        showMicrogridCard({
+                            group_id: groupID,
+                            avg_score: avgSolar,
+                            count: chargers.length
+                        });
+                    });
+
+                    marker.addTo(map);
+                    microGridLayers.push(marker);
+                });
+
+            } else {
+                microGridLayers.forEach(layer => map.removeLayer(layer));
+                microGridLayers = [];
+            }
+        }
+
+        function getSmoothedRectangle(bounds, segments = 20) {
+            const sw = bounds.getSouthWest();
+            const nw = bounds.getNorthWest();
+            const ne = bounds.getNorthEast();
+            const se = bounds.getSouthEast();
+
+            // Interpolate along edges
+            function interpolate(p1, p2) {
+                const points = [];
+                for (let i = 0; i <= segments; i++) {
+                    const lat = p1.lat + (p2.lat - p1.lat) * (i / segments);
+                    const lng = p1.lng + (p2.lng - p1.lng) * (i / segments);
+                    points.push([lat, lng]);
+                }
+                return points;
+            }
+
+            return [
+                ...interpolate(sw, nw),
+                ...interpolate(nw, ne),
+                ...interpolate(ne, se),
+                ...interpolate(se, sw)
+            ];
+        }
+
+        // Utility: Map solar % to color
+        function getSolarColor(solar) {
+            if (solar >= 75) return "#00cc44";     // bright green
+            if (solar >= 50) return "#66cc66";     // soft green
+            if (solar >= 25) return "#cccc66";     // yellowish
+            return "#ff6666";                      // red
+        }
+
+        function showMicrogridCard(microgrid) {
+            const container = document.getElementById("microgridCard");
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="card p-3 shadow-sm" style="background-color: black; color: white; border-left: 6px solid #28a745;">
+                    <button class="btn-close btn-close-white position-absolute" style="top: 10px; right: 10px;" aria-label="Close" onclick="hideMicrogridCard()"></button>
+                    <h5 class="mb-2"><strong>MicroGrid</strong></h5>
+                    <p class="mb-1">Avg Solar Efficiency: <strong>${microgrid.avg_score.toFixed(1)}</strong></p>
+                    <p class="mb-0">Chargers in this MicroGrid: <strong>${microgrid.count}</strong></p>
+                </div>
+            `;
+
+            container.style.display = "block";
+        }
+
+        function hideMicrogridCard() {
+            const container = document.getElementById("microgridCard");
+            container.style.display = "none";
+        }
+
+        // Function to show the map again when clicking "Home"
+        document.addEventListener("DOMContentLoaded", function () {
+            const mapTab = document.querySelector(".nav-link[href='#'][aria-current='page']");
+            const forecastTab = document.querySelector(".nav-link[href='#'][onclick*='toggleForecastSlider']");
+
+            const sidebar = document.querySelector(".sidebar");
+
+            if (mapTab) {
+                mapTab.addEventListener("click", function (event) {
+                    event.preventDefault();
+
+                    // Show map and controls
+                    document.getElementById("myGridContainer").style.display = "none";
+                    document.getElementById("map").style.display = "block";
+                    document.getElementById("mapToggles").style.display = "block";
+
+                    const filtersButton = document.getElementById("filtersButton");
+                    const chargersToggle = document.getElementById("showMyChargersContainer");
+                    const routeForm = document.querySelector("form.d-flex.ms-3");
+                    const microgridsToggle = document.getElementById("showMicrogridsContainer");
+
+                    if (filtersButton) filtersButton.style.visibility = "visible";
+                    if (chargersToggle) chargersToggle.style.visibility = "visible";
+                    if (microgridsToggle) microgridsToggle.style.visibility = "visible";
+                    if (routeForm) routeForm.style.visibility = "visible";
+                    if (sidebar) sidebar.style.display = "flex";
+
+                    // Hide forecast slider
+                    document.getElementById("forecast-slider-container").classList.remove("show");
+
+                    // Update tab highlighting
+                    if (forecastTab) forecastTab.classList.remove("active");
+                    mapTab.classList.add("active");
+                });
+            }
+        });
+
+        // Fetch chargers and display them
+        async function loadChargers() {
+            try {
+                const chargerResponse = await fetch('/api/chargers');
+                allChargers = await chargerResponse.json();
+
+                const forecastResponse = await fetch('/api/daily_forecast');
+                const forecastJson = await forecastResponse.json();
+
+                // Build forecast cache from local file
+                forecastJson.data.forEach(entry => {
+                    chargerForecastCache[entry.charger_id] = entry.forecast.list;
+                });
+
+                console.log("Forecasts preloaded from local file:", chargerForecastCache);
+                populateForecastDropdown(); 
+            } catch (error) {
+                console.error('Error loading chargers or forecasts:', error);
+            }
+        }
+
+        function highlightActiveTab(activeTab) {
+            document.querySelectorAll('.navbar .nav-link').forEach(tab => {
+                tab.classList.remove('active');
+                tab.removeAttribute('aria-current');
+            });
+            activeTab.classList.add('active');
+            activeTab.setAttribute('aria-current', 'page');
+        }
+
+        function toggleForecastSlider(tab) {
+            // Hide grid and show forecast slider
+            document.getElementById("myGridContainer").style.display = "none";
+            //document.getElementById("mapToggles").style.display = "none";
+            document.getElementById("mapToggles").style.display = "block";
+            const routeForm = document.getElementById("routeForm");
+
+            const slider = document.getElementById("forecast-slider-container");
+            const sidebar = document.querySelector(".sidebar");
+
+            slider.style.display = "block";
+            sidebar.style.display = "flex";
+
+            document.querySelectorAll(".tab-panel").forEach(p => p.style.display = "none");
+
+            if (!slider.classList.contains("show")) {
+                slider.classList.add("show");
+                if (taxiMarker) map.removeLayer(taxiMarker);
+                if (routingControl) map.removeControl(routingControl);
+
+                // Hide all charger markers
+                allChargerMarkers.forEach(m => map.removeLayer(m));
+                nearbyChargerMarkers.forEach(m => map.removeLayer(m));
+                microGridLayers.forEach(m => map.removeLayer(m));
+                toggleAllChargers(false);
+                document.getElementById("loadAllChargers").checked = false;
+                document.getElementById("toggleMicroGrids").checked = false;
+                document.getElementById("charger-card").style.display = "none";
+
+                /*if (routeForm) {
+                    routeForm.style.visibility = "hidden";
+                    routeForm.style.pointerEvents = "none";
+                }*/
+            }
+            highlightActiveTab(tab);
+        }
+
+        function showMapTab(tab) {
+            const slider = document.getElementById("forecast-slider-container");
+            slider.classList.remove("show");
+            document.getElementById("myGridContainer").style.display = "none";
+            document.getElementById("forecast-slider-container").style.display = "none";
+            document.getElementById("mapToggles").style.display = "block";
+            const routeForm = document.getElementById("routeForm");
+            routeForm.style.visibility = "visible";
+            routeForm.style.pointerEvents = "auto"; // Optional: re-enable clicks
+            const sidebar = document.querySelector(".sidebar");
+            if (sidebar) sidebar.style.display = "flex";
+            document.querySelectorAll(".tab-panel").forEach(p => p.style.display = "none");
+            allChargerMarkers.forEach(m => map.removeLayer(m));
+            allChargerMarkers = [];
+            highlightActiveTab(tab);
+        }
+
+        function toggleViewMyGrid(tab) {
+            const slider = document.getElementById("forecast-slider-container");
+            slider.classList.remove("show");
+            const grid = document.getElementById("myGridContainer");
+            grid.style.display = "block";
+            document.getElementById("forecast-slider-container").style.display = "none";
+            document.getElementById("mapToggles").style.display = "none";
+            const routeForm = document.getElementById("routeForm");
+            document.getElementById("charger-card").style.display = "none";
+            const sidebar = document.querySelector(".sidebar");
+            if (sidebar) sidebar.style.display = "none";
+            const tabFilters = document.getElementById("filters");
+            if (tabFilters) tabFilters.style.display = "none";
+            const tabVehicles = document.getElementById("vehicles");
+            if (tabVehicles) tabVehicles.style.display = "none";
+            const tabPreferences = document.getElementById("preferences");
+            if (tabPreferences) tabPreferences.style.display = "none";
+            const tabInfo = document.getElementById("info");
+            if (tabInfo) tabInfo.style.display = "none";
+
+            // Hide all charger markers
+            allChargerMarkers.forEach(m => map.removeLayer(m));
+            nearbyChargerMarkers.forEach(m => map.removeLayer(m));
+            microGridLayers.forEach(m => map.removeLayer(m));
+            toggleAllChargers(false);
+            document.getElementById("loadAllChargers").checked = false;
+            document.getElementById("toggleMicroGrids").checked = false;
+            document.getElementById("charger-card").style.display = "none";
+
+            loadMyMicrogrids();
+            const selectMapContainer = document.getElementById("selectMap");
+            selectMapContainer.style.display = "block";
+
+            if (!selectMap) {
+                setTimeout(() => {
+                    initSelectMap();
+                }, 100);
+            }
+
+            highlightActiveTab(tab);
+            loadMyMicrogrids();
+        }
+
+        function toggleAllChargers(checked) {
+
+            allChargerMarkers.forEach(marker => map.removeLayer(marker));
+            allChargerMarkers = [];
+
+            if (!checked) return;
+
+            allChargers.forEach(charger => {
+                if (charger.latitude !== null && charger.longitude !== null) {
+                    const chargerTypes = Array.isArray(charger.types) ? charger.types : [charger.types];
+                    const matches = selectedPlugTypes.size === 0 || chargerTypes.some(type => selectedPlugTypes.has(type));
+
+                    if (!matches) return;
+
+                    let solar = parseFloat(charger["solar_power_estimate"]);
+                    let iconUrl = "/static/darkRedCharger.png";
+                    if (solar >= 75) iconUrl = "/static/greenCharge.png";
+                    else if (solar >= 40) iconUrl = "/static/blackCharge.png";
+
+                    let chargerIcon = L.icon({
+                        iconUrl: iconUrl,
+                        iconSize: [20, 30],
+                        iconAnchor: [10, 30],
+                        popupAnchor: [0, -30],
+                        className: 'all-charger-marker'
+                    });
+
+                    let marker = L.marker([charger.latitude, charger.longitude], { icon: chargerIcon });
+                    marker.chargerData = charger;
+                    marker.addTo(map);
+                    allChargerMarkers.push(marker);
+
+                    marker.on('click', function () {
+                        const panel = document.getElementById('charger-card');
+                        panel.style.display = 'block';
+                        setTimeout(() => {
+                            panel.classList.add('show');
+                        }, 10);
+
+                        document.getElementById('charger-title').textContent = charger.LocationName;
+                        document.getElementById('charger-address').textContent = charger.Address;
+                        document.getElementById('charger-status').textContent = charger.enabled ? "Enabled" : "Disabled";
+                        document.getElementById('charger-power').textContent = charger.power || "N/A";
+                        document.getElementById('charger-solar').textContent = charger.solar_power_estimate.toFixed(1);
+                        document.getElementById('charger-grid').textContent = (charger.grid_power_percentage || 0).toFixed(1);
+                        document.querySelector('.power strong').textContent = charger.power + ' kW';
+
+                        const typeElem = document.getElementById('charger-type');
+                        if (Array.isArray(charger.types)) {
+                            typeElem.textContent = charger.types.join(', ');
+                        } else {
+                            typeElem.textContent = charger.types || 'Unknown';
+                        }
+                        
+                        const badgeContainer = document.querySelector('.type-badge');
+                        badgeContainer.innerHTML = '';
+
+                        if (Array.isArray(charger.types)) {
+                            charger.types.forEach(type => {
+                                const badge = document.createElement('span');
+                                badge.className = 'type-badge';
+                                badge.textContent = type;
+                                badgeContainer.appendChild(badge);
+                            });
+                        } else {
+                            badgeContainer.textContent = charger.types || 'CCS';
+                        }
+
+                        const totalStalls = charger.stalls || 1;
+                        const stallCountElem = document.querySelector('.stall-count');
+                        stallCountElem.innerHTML = `<strong style="color: #00cc00;">${totalStalls}/${totalStalls}</strong><br><span>stalls</span>`;
+
+                        const icon = document.getElementById('charger-icon');
+                        let solar = parseFloat(charger.solar_power_estimate);
+                        if (solar >= 75) icon.src = "/static/greenCharge.png";
+                        else if (solar >= 40) icon.src = "/static/blackCharge.png";
+                        else icon.src = "/static/darkRedCharger.png";
+
+                        if (userLocation) {
+                            const router = L.Routing.osrmv1({
+                                serviceUrl: 'https://router.project-osrm.org/route/v1'
+                            });
+
+                            router.route([
+                                L.Routing.waypoint(userLocation),
+                                L.Routing.waypoint(L.latLng(charger.latitude, charger.longitude))
+                            ], function (err, routes) {
+                                if (!err && routes && routes.length > 0) {
+                                    const travelTimeSeconds = routes[0].summary.totalTime;
+                                    const travelTimeMinutes = Math.round(travelTimeSeconds / 60);
+                                    document.getElementById('charger-eta').textContent = `${travelTimeMinutes}`;
+                                } else {
+                                    document.getElementById('charger-eta').textContent = 'N/A';
+                                    console.error("ETA routing error:", err || "No routes found");
+                                }
+                            });
+                        } else {
+                            document.getElementById('charger-eta').textContent = `N/A`;
+                        }
+                        selectedCharger = charger;
+                    });
+                }
+            });
+        }
+
+        function hideChargerInfo() {
+            const panel = document.getElementById("charger-card");
+            panel.classList.remove("show");
+            setTimeout(() => panel.style.display = "none", 300);
+        }
+
+        const buttons = document.querySelectorAll('.tab-btn');
+        const panels = document.querySelectorAll('.tab-panel');
+
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.getAttribute('data-tab');
+
+                if (target === 'map') {
+                    panels.forEach(p => p.style.display = 'none');
+                    buttons.forEach(b => b.classList.remove('active-tab'));
+                    return;
+                }
+
+                const targetPanel = document.getElementById(target);
+
+                const isCurrentlyVisible = targetPanel.style.display === 'block';
+                panels.forEach(p => p.style.display = 'none');
+
+                if (!isCurrentlyVisible) {
+                    targetPanel.style.display = 'block';
+                }
+
+                buttons.forEach(b => b.classList.remove('active-tab'));
+
+                if (target !== 'map') {
+                    btn.classList.add('active-tab');
+                }
+            });
+        });
+
+        // Load chargers when page loads
+        document.addEventListener("DOMContentLoaded", loadChargers);
+
+        // JavaScript object for vehicle data passed from Flask
+        const vehiclesByMake = {{ vehicle_data | tojson }};
+        console.log("vehiclesByMake:", vehiclesByMake);
+
+        function updateModels() {
+              const make = document.getElementById("make").value;
+              const modelSelect = document.getElementById("model");
+              const batteryCapacityInput = document.getElementById("batteryCapacity");
+              const consumptionRateInput = document.getElementById("consumptionRate");
+
+              modelSelect.innerHTML = "<option value=''>Select Model</option>";
+              batteryCapacityInput.value = '';
+              consumptionRateInput.value = '';
+
+              const models = vehiclesByMake[make] || [];
+              models.forEach(vehicle => {
+                  const option = document.createElement("option");
+                  option.value = vehicle.model;
+                  option.textContent = vehicle.model;
+                  modelSelect.appendChild(option);
+              });
+
+            // Reset capacity and consumption when make changes
+            modelSelect.addEventListener("change", () => {
+                const selectedModel = modelSelect.value;
+                const selectedVehicle = models.find(vehicle => vehicle.model === selectedModel);
+
+                if (selectedVehicle) {
+                    batteryCapacityInput.value = selectedVehicle.battery_capacity;
+                    consumptionRateInput.value = selectedVehicle.consumption_rate;
+
+                    console.log("Selected plug types:", selectedVehicle.plug_types);
+                    highlightPlugTypes(selectedVehicle.plug_types);
+                    showSelectedCar(make, selectedModel);
+
+                    //fetch('/api/select_vehicle', {
+                    //    method: 'POST',
+                    //    headers: {
+                    //        'Content-Type': 'application/json'
+                    //    },
+                    //    body: JSON.stringify({
+                    //        vehicleID: selectedVehicle.vehicle_id
+                    //    })
+                    //})
+                    //.then(response => response.json())
+                    //.then(data => {
+                    //    console.log('Vehicle saved:', data);
+                    //})
+                    //.catch(error => {
+                    //    console.error('Error saving vehicle:', error);
+                    //});
+                } else {
+                    batteryCapacityInput.value = '';
+                    consumptionRateInput.value = '';
+                }
+            });
+        }
+
+        function toggleForm(formId) {
+            $("#" + formId).slideToggle(300);
+        }
+
+        function updateSlider(value, targetId) {
+            document.getElementById(targetId).textContent = value;
+        }
+
+        function preventFormSubmission(event) {
+            event.preventDefault();
+        }
+
+        var userLocation = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            let originInput = document.getElementById("origin");
+            let originDropdown = bootstrap.Dropdown.getOrCreateInstance(originInput);
+            
+            originInput.addEventListener("click", function (event) {
+                event.stopPropagation();
+                originDropdown.show();
+            });
+            
+            ["input", "change"].forEach(eventType => {
+                originInput.addEventListener(eventType, function () {
+                    if (originInput.value.trim() === "") {
+                        userLocation = null;
+                        console.log("Origin input cleared — userLocation reset.");
+                    }
+                });
+            });
+
+            document.querySelectorAll("#originDropdown .dropdown-item").forEach(item => {
+                item.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    document.getElementById("origin").value = this.innerText;
+                    let dropdown = bootstrap.Dropdown.getInstance(document.getElementById("origin"));
+                    if (dropdown) dropdown.hide();
+                });
+            });
+            
+            document.addEventListener("click", function (event) {
+                if (!originInput.contains(event.target) && !document.getElementById("originDropdown").contains(event.target)) {
+                    originDropdown.hide();
+                }
+            });
+        });
+
+        function useCurrentLocation() {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            if (!map) {
+                console.warn("Map is not initialized yet. Try again in a moment.");
+                return;
+            }
+
+            console.log("Trying to get geolocation...");
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    userLocation = L.latLng(lat, lng);
+                    document.getElementById("origin").value = "Current Location";
+
+                    document.getElementById("originDropdown").style.display = "none";
+
+                    map.flyTo(userLocation, 14);
+                },
+                () => alert("Unable to retrieve your location.")
+            );
+        }
+
+        // Function to get origin coordinates dynamically
+        async function getOriginCoordinates() {
+            let originInput = document.getElementById("origin").value;
+            if (originInput === "Current Location" && userLocation) {
+                return userLocation; 
+            }
+            // Otherwise, geocode the text input value
+            return await getCoordinates(originInput);
+        }
+
+        // Function to get geocoded coordinates from location name
+        async function getCoordinates(location) {
+            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${location}`);
+            let data = await response.json();
+            if (data.length > 0) {
+                return L.latLng(data[0].lat, data[0].lon);
+            } else {
+                alert("Location not found: " + location);
+                return null;
+            }
+        }
+
+        document.getElementById("navigateBtn").addEventListener("click", function () {
+            if (!userLocation || !selectedCharger || !selectedCharger.latitude || !selectedCharger.longitude) {
+                alert("Missing location data.");
+                return;
+            }
+
+            // Remove existing route
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
+            }
+
+            // Remove previous ranked charger markers
+            nearbyChargerMarkers.forEach(marker => map.removeLayer(marker));
+            nearbyChargerMarkers = [];
+
+            const destLatLng = L.latLng(selectedCharger.latitude, selectedCharger.longitude);
+
+            routingControl = L.Routing.control({
+                waypoints: [userLocation, destLatLng],
+                routeWhileDragging: true,
+                lineOptions: {
+                    styles: [{ color: "blue", opacity: 0.7, weight: 6 }]
+                },
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                }),
+                container: document.getElementById("routeInstructions")
+            }).on('routesfound', function (e) {
+                const route = e.routes[0];
+                const travelTimeMinutes = Math.round(route.summary.totalTime / 60);
+                alert(`Estimated travel time: ${travelTimeMinutes} minutes`);
+                WriteNodesFromRoute(route);
+
+                // Remove old taxi marker
+                if (taxiMarker) {
+                    map.removeLayer(taxiMarker);
+                }
+
+                // Place taxi at origin
+                taxiMarker = L.marker([userLocation.lat, userLocation.lng], {
+                    icon: L.icon({
+                        iconUrl: "/static/taxi.png",
+                        iconSize: [30, 40],
+                        iconAnchor: [15, 40],
+                        popupAnchor: [0, -40],
+                        className: 'taxi-marker'
+                    }),
+                    draggable: true
+                }).addTo(map);
+
+                taxiMarker.bindPopup("Drag the cab to find nearby chargers.").openPopup();
+
+                taxiMarker.on('dragend', function (event) {
+                    const position = event.target.getLatLng();
+
+                    fetchNearbyChargers(
+                        position.lat,
+                        position.lng,
+                        document.getElementById("ec1").value / 100,
+                        document.getElementById("ec2").value / 100,
+                        document.getElementById("ec3").value / 100,
+                        parseInt(document.getElementById("radius").value),
+                        Array.from(selectedPlugTypes)
+                    );
+                });
+            }).addTo(map);
+
+            // Add close button
+            setTimeout(() => {
+                const container = document.querySelector('.leaflet-routing-container');
+                if (container && !container.querySelector('.close-button')) {
+                    const closeBtn = document.createElement('button');
+                    closeBtn.innerHTML = '&times;';
+                    closeBtn.className = 'close-button';
+                    closeBtn.onclick = () => container.style.display = 'none';
+                    container.style.position = 'relative';
+                    container.appendChild(closeBtn);
+                }
+            }, 500);
+        });
+
+
+        // Function to handle routing
+        async function searchRoute() {
+            let originCoords = await getOriginCoordinates();
+            let destinationCoords = await getCoordinates(document.getElementById("destination").value);
+            if (!originCoords || !destinationCoords) return;
+            // Remove previous route if it exists
+            if (routingControl !== null) { 
+                map.removeControl(routingControl);
+                routingControl = null;
+            }
+            // Only remove previous ranked charger markers (not all custom-marker class)
+            nearbyChargerMarkers.forEach(marker => map.removeLayer(marker));
+            nearbyChargerMarkers = [];
+            // Add new route
+            routingControl = L.Routing.control({
+                waypoints: [originCoords, destinationCoords],
+                routeWhileDragging: true,
+                lineOptions: {
+                    styles: [{ color: "blue", opacity: 0.7, weight: 6 }]
+                },
+                router: L.routing.osrmv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1'
+                }),
+                container: document.getElementById("routeInstructions")
+            }).on('routesfound', function(e) {
+                let route = e.routes[0]; 
+                let travelTimeSeconds = route.summary.totalTime;
+                let travelTimeMinutes = Math.round(travelTimeSeconds / 60);
+                console.log("Route Object:", route);
+                if (!route.summary) {
+                    console.error("No route summary found! Check OSRM response.");
+                    return;
+                }
+                
+                alert(`Estimated travel time: ${travelTimeMinutes} minutes`);
+
+                WriteNodesFromRoute(route);
+                if (taxiMarker) {
+                    map.removeLayer(taxiMarker);
+                }
+                taxiMarker = L.marker([originCoords.lat, originCoords.lng], {
+                    icon: L.icon({
+                        iconUrl: "/static/taxi.png", 
+                        iconSize: [30, 40],
+                        iconAnchor: [15, 40],
+                        popupAnchor: [0, -40],
+                        className: 'taxi-marker'
+                    }),
+                    draggable: true
+                }).addTo(map);
+                taxiMarker.bindPopup("Drag the cab to find nearby chargers.").openPopup();
+                taxiMarker.on('dragend', function (event) {
+                    const marker = event.target;
+                    const position = marker.getLatLng();
+                    
+                    fetchNearbyChargers(
+                        position.lat,
+                        position.lng,
+                        document.getElementById("ec1").value / 100,
+                        document.getElementById("ec2").value / 100,
+                        document.getElementById("ec3").value / 100,
+                        parseInt(document.getElementById("radius").value),
+                        Array.from(selectedPlugTypes)
+                    );
+                });
+            }).addTo(map);
+
+            setTimeout(() => {
+                const container = document.querySelector('.leaflet-routing-container');
+                if (container) {
+                    const closeBtn = document.createElement('button');
+                    closeBtn.innerHTML = '&times;';
+                    closeBtn.className = 'close-button';
+                    closeBtn.onclick = () => {
+                        container.style.display = 'none';
+                    };
+                    container.style.position = 'relative';
+                    container.appendChild(closeBtn);
+                }
+            }, 500); // Delay slightly to let DOM render
+        }
+
+        function fetchTopMicroGrids(lat, lng) {
+            fetch('/api/top_microgrids', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    lat: lat,
+                    lng: lng,
+                    derouting_cost: document.getElementById("ec1").value / 100,
+                    charger_availability: document.getElementById("ec2").value / 100,
+                    sustainable_charging_level: document.getElementById("ec3").value / 100,
+                    radius: parseInt(document.getElementById("radius").value),
+                    plug_types: Array.from(selectedPlugTypes)
+                }),
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("🏞 Top MicroGrids:", data);
+                // Clear previous markers if needed
+                nearbyChargerMarkers.forEach(marker => map.removeLayer(marker));
+                nearbyChargerMarkers = [];
+                data.forEach((microgrid, index) => {
+                    const [lat, lng] = microgrid.center;
+                    const rank = index + 1;
+                    // Custom HTML marker with rank number
+                    const iconHtml = `
+                        <div class="ranked-icon">${rank}</div>
+                    `;
+                    const customIcon = L.divIcon({
+                        className: 'custom-microgrid-icon',
+                        html: iconHtml,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+                    const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+                    nearbyChargerMarkers.push(marker);
+                });
+            })
+            .catch(error => console.error('Error fetching top microgrids:', error));
+        }
+
+        function fetchNearbyChargers(lat, lng, derouting_cost, charger_availability, sustainable_charging_level, radius) {
+            const isForecastMode = document.querySelector("#forecast-slider-container").classList.contains("show");
+
+            if (isForecastMode) {
+                const selectedIndex = parseInt(document.getElementById("forecastHourSlider").value);
+                const forecastEntry = forecastTimeList[selectedIndex];
+
+                const forecast_time = forecastEntry.dt_txt.replace("T", " ").split(":").slice(0, 2).join(":") + ":00";
+                const cloudsMap = Object.fromEntries(
+                    Object.entries(chargerForecastCache).map(([cid, list]) => [
+                        cid,
+                        list[selectedIndex]?.clouds?.all ?? 100
+                    ])
+                );
+
+                fetch("/forecasted_ranked_chargers", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        lat,
+                        lng,
+                        derouting_cost,
+                        charger_availability,
+                        sustainable_charging_level,
+                        radius,
+                        forecast_time,
+                        solar_scores: forecastScores,
+                        plug_types: Array.from(selectedPlugTypes)
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log("🔮 Forecasted Ranked Chargers:", data);
+                    nearbyChargerMarkers.forEach(marker => map.removeLayer(marker));
+                    nearbyChargerMarkers = [];
+                    addMarkers(data.ranked_chargers);
+                })
+                .catch(error => console.error("Error fetching forecasted chargers:", error));
+                return;
+            }
+            else {
+                fetch('/nearby_chargers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lat: lat,
+                        lng: lng,
+                        derouting_cost: derouting_cost,
+                        charger_availability: charger_availability,
+                        sustainable_charging_level: sustainable_charging_level,
+                        radius: radius,
+                        plug_types: Array.from(selectedPlugTypes) 
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Nearby Chargers:', data);
+                    // Only remove previous ranked charger markers (not all custom-marker class)
+                    nearbyChargerMarkers.forEach(marker => map.removeLayer(marker));
+                    nearbyChargerMarkers = [];
+                    // Add new nearby charger markers
+                    addMarkers(data.nearby_chargers);
+                })
+                .catch(error => console.error('Error fetching nearby chargers:', error));
+            }
+        }
+
+        function addMarkers(chargers) {
+            chargers.forEach((charger, index) => {
+                const lat = charger.latitude;
+                const lng = charger.longitude;
+                const ecoScore = charger.eco_score;
+                const eta = charger.mins_to_arrive;
+                const availability = charger.availability;
+                const solar = charger.solar_score;
+                const travel = charger.travel_score;
+                const name = charger.name;
+                const location = charger.location;
+                const address = charger.address;
+                
+                const numberIcon = L.divIcon({
+                    html: `<div class="ranked-icon">${index + 1}</div>`,
+                    className: 'custom-ranked-marker',
+                    iconSize: [30, 30]
+                });
+                const marker = L.marker([lat, lng], { icon: numberIcon, pane: "rankedPane" });
+                marker.chargerData = charger;  // Attach charger to marker
+                marker.addTo(map);
+               
+                marker.on('click', () => {
+                    const panel = document.getElementById('charger-card');
+                    panel.style.display = 'block';
+                    setTimeout(() => {
+                        panel.classList.add('show');
+                    }, 10);
+                    document.getElementById('charger-title').textContent = location;
+                    document.getElementById('charger-address').textContent = address;
+                    const typeElem = document.getElementById('charger-type');
+                    if (Array.isArray(charger.types)) {
+                        typeElem.textContent = charger.types.join(', ');
+                    } else {
+                        typeElem.textContent = charger.types || 'Unknown';
+                    }
+                    document.getElementById('charger-status').textContent = 'Enabled';
+                    document.getElementById('charger-power').textContent = charger.power || 'N/A';
+                    document.getElementById('charger-solar').textContent = (solar || 0).toFixed(1);
+                    document.getElementById('charger-grid').textContent = (100-solar || 0).toFixed(1);
+                    document.querySelector('.power strong').textContent = `${charger.power || 0} kW`;
+                    const badgeContainer = document.querySelector('.type-badge');
+                    badgeContainer.innerHTML = '';
+                    if (Array.isArray(charger.types)) {
+                        charger.types.forEach(type => {
+                            const badge = document.createElement('span');
+                            badge.className = 'type-badge';
+                            badge.textContent = type;
+                            badgeContainer.appendChild(badge);
+                        });
+                    } else {
+                        badgeContainer.textContent = charger.types || 'CCS';
+                    }
+                    const totalStalls = charger.stalls || 1;
+                    const stallCountElem = document.querySelector('.stall-count');
+                    stallCountElem.innerHTML = `<strong style="color: #00cc00;">${totalStalls}/${totalStalls}</strong><br><span>stalls</span>`;
+                    document.getElementById('charger-eta').textContent = eta ? Math.round(eta) : 'N/A';
+                    document.getElementById('charger-eco').textContent = ecoScore ? (ecoScore.toFixed(0)) : '-';
+
+                    selectedCharger = charger;
+                });
+                nearbyChargerMarkers.push(marker);
+            });
+        }
+
+        let routeCoordinates1 = [];
+        function WriteNodesFromRoute(route) {
+            routeCoordinates1 = []; // Reset previous route
+            let coordinates = route.coordinates;
+            if (!coordinates || coordinates.length === 0) {
+                console.log("No coordinates in route.");
+                return;
+            }
+            coordinates.forEach(coord => routeCoordinates1.push(coord));
+            let nodesList = [];
+            const origLat = coordinates[0].lat;
+            const origLng = coordinates[0].lng;
+            const destLat = coordinates[coordinates.length - 1].lat;
+            const destLng = coordinates[coordinates.length - 1].lng;
+            nodesList[0] = `0 ${origLng} ${origLat}`;
+            for (let i = 1; i < routeCoordinates1.length + 1; i++) {
+                nodesList[i] = `${i} ${routeCoordinates1[i - 1].lng} ${routeCoordinates1[i - 1].lat}`;
+            }
+            nodesList[routeCoordinates1.length + 1] = `${routeCoordinates1.length + 1} ${destLng} ${destLat}`;
+            console.log("Nodes to send:", nodesList);
+            sendNodes(nodesList);
+        }
+
+        function sendNodes(nodesList) {
+            fetch('/nodes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ nodesList: nodesList }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response:', data);
+            })
+            .catch(error => {
+                console.error('Error sending nodes:', error);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            fetchSolarPowerData();
+        });
+
+        function fetchSolarPowerData() {
+            fetch('/solar_power_all')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch data");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("data-container").innerText = data.error;
+                    } else {
+                        displaySolarData(data.chargers);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    document.getElementById("data-container").innerText = "Error loading data.";
+                });
+        }
+
+        function displaySolarData(chargers) {
+            const container = document.getElementById("data-container");
+            container.innerHTML = "<h2>Solar Power Data</h2>";
+            
+            chargers.forEach(charger => {
+                const chargerDiv = document.createElement("div");
+                chargerDiv.innerHTML = `
+                    <p><strong>Charger ID:</strong> ${charger.charger_id}</p>
+                    <p><strong>Temperature:</strong> ${charger.temperature}°C</p>
+                    <p><strong>Clouds:</strong> ${charger.clouds}%</p>
+                    <p><strong>Solar Power Estimate:</strong> ${charger["solar_power_estimate"]}%</p>
+                    <p><strong>Grid Power Usage:</strong> ${charger.grid_power_usage} kW</p>
+                    <hr>
+                `;
+                container.appendChild(chargerDiv);
+            });
+        }
+
+        function showForecastChargerCard(charger) {
+            const panel = document.getElementById('charger-card');
+            panel.style.display = 'block';
+            setTimeout(() => panel.classList.add('show'), 10);
+
+            document.getElementById('charger-title').textContent = charger.LocationName;
+            document.getElementById('charger-address').textContent = charger.Address;
+            document.getElementById('charger-lat').textContent = charger.latitude;
+            document.getElementById('charger-lng').textContent = charger.longitude;
+
+            const typeElem = document.getElementById('charger-type');
+            typeElem.textContent = Array.isArray(charger.types) ? charger.types.join(', ') : (charger.types || 'Unknown');
+
+            document.getElementById('charger-status').textContent = charger.enabled ? "Enabled" : "Disabled";
+            document.getElementById('charger-power').textContent = charger.power || "N/A";
+            document.getElementById('charger-solar').textContent = charger.solar_power_estimate.toFixed(1);
+            document.getElementById('charger-grid').textContent = (charger.grid_power_percentage || 0).toFixed(1);
+            document.querySelector('.power strong').textContent = charger.power + ' kW';
+
+            const badgeContainer = document.querySelector('.type-badge');
+            badgeContainer.innerHTML = '';
+            if (Array.isArray(charger.types)) {
+                charger.types.forEach(type => {
+                    const badge = document.createElement('span');
+                    badge.className = 'type-badge';
+                    badge.textContent = type;
+                    badgeContainer.appendChild(badge);
+                });
+            }
+
+            const totalStalls = charger.stalls || 1;
+            document.querySelector('.stall-count').innerHTML =
+                `<strong style="color: #00cc00;">${totalStalls}/${totalStalls}</strong><br><span>stalls</span>`;
+
+            const icon = document.getElementById('charger-icon');
+            const solar = parseFloat(charger.solar_power_estimate);
+            if (solar >= 75) icon.src = "/static/greenCharge.png";
+            else if (solar >= 40) icon.src = "/static/blackCharge.png";
+            else icon.src = "/static/darkRedCharger.png";
+
+            if (userLocation) {
+                const router = L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                })
+                router.route([
+                    L.Routing.waypoint(userLocation),
+                    L.Routing.waypoint(L.latLng(charger.latitude, charger.longitude))
+                ], function (err, routes) {
+                    if (!err && routes && routes.length > 0) {
+                        const travelTimeSeconds = routes[0].summary.totalTime;
+                        const travelTimeMinutes = Math.round(travelTimeSeconds / 60);
+                        document.getElementById('charger-eta').textContent = `${travelTimeMinutes}`;
+                    } else {
+                        document.getElementById('charger-eta').textContent = 'N/A';
+                        console.error("ETA routing error:", err || "No routes found");
+                    }
+                });
+            } else {
+                document.getElementById('charger-eta').textContent = `N/A`;
+            }
+
+            selectedCharger = charger;
+        }
+
+        let forecastScores = {};
+        async function forecastAndColorAllChargers(forecastIndex = 0) {
+
+            allChargerMarkers.forEach(m => map.removeLayer(m));
+            allChargerMarkers = [];
+
+            const body = {
+                forecast_time: null,
+                clouds: {}
+            };
+
+            for (const charger of allChargers) {
+                const forecastList = chargerForecastCache[charger.charger_id];
+                if (!forecastList || !forecastList[forecastIndex]) continue;
+                const entry = forecastList[forecastIndex];
+                body.clouds[charger.charger_id] = entry.clouds.all;
+                if (!body.forecast_time) body.forecast_time = entry.dt_txt.replace("T", " ").split(":").slice(0, 2).join(":") + ":00";
+            }
+
+            forecastScores = await fetch("/api/forecast_solar_scores", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            }).then(r => r.json());
+
+            let usedForecastTime = body.forecast_time;
+
+            for (const charger of allChargers) {
+                if (!charger.latitude || !charger.longitude) continue;
+
+                const solar_score = forecastScores[charger.charger_id] || 0;
+                let iconUrl = "/static/darkRedCharger.png";
+                if (solar_score >= 75) iconUrl = "/static/greenCharge.png";
+                else if (solar_score >= 40) iconUrl = "/static/blackCharge.png";
+
+                const chargerIcon = L.icon({
+                    iconUrl: iconUrl,
+                    iconSize: [20, 30],
+                    iconAnchor: [10, 30],
+                    popupAnchor: [0, -30],
+                    className: 'forecast-charger-marker'
+                });
+
+                const marker = L.marker([charger.latitude, charger.longitude], { icon: chargerIcon }).addTo(map);
+                marker.on('click', () => {
+                    showForecastChargerCard({
+                        ...charger,
+                        solar_power_estimate: solar_score,
+                        grid_power_percentage: 100 - solar_score,
+                        forecast_time: usedForecastTime
+                    });
+                });
+                allChargerMarkers.push(marker);
+            }
+
+            const label = document.getElementById("forecast-interval-label");
+            if (usedForecastTime) {
+                label.textContent = `Forecast for: ${usedForecastTime}`;
+                label.style.display = "block";
+            }
+        }
+
+        let selectedPlugTypes = new Set();
+        function togglePlugFilter(el) {
+            const type = el.dataset.plugType;
+            if (selectedPlugTypes.has(type)) {
+                selectedPlugTypes.delete(type);
+                el.classList.remove("selected-plug");
+            } else {
+                selectedPlugTypes.add(type);
+                el.classList.add("selected-plug");
+            }
+            updatePlugTypeFiltering();
+        }
+        
+        function updatePlugTypeFiltering() {
+            allChargerMarkers.forEach(marker => {
+                const charger = marker.chargerData;
+                const chargerTypes = Array.isArray(charger.types) ? charger.types : [charger.types];
+                console.log("Selected plug types:", selectedPlugTypes);
+                console.log("This charger's types:", marker.chargerData.types);
+                const matches = Array.from(selectedPlugTypes).some(type => chargerTypes.includes(type));
+                if (selectedPlugTypes.size === 0 || matches) {
+                    map.addLayer(marker);
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
+        }
+        function showSelectedCar(make, model) {
+            const box = document.getElementById("selectedCarBox");
+            const nameElement = box.querySelector(".car-name");
+            nameElement.textContent = `${make} ${model}`;
+            box.style.display = "flex";
+            const swapIcon = box.querySelector(".swap-icon");
+            swapIcon.onclick = () => {
+                // Remove all active-tab classes
+                document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active-tab"));
+                document.querySelectorAll(".tab-panel").forEach(panel => panel.style.display = "none");
+                // Activate the vehicle tab
+                document.querySelector('.tab-btn[data-tab="vehicles"]').classList.add("active-tab");
+                document.getElementById("vehicles").style.display = "block";
+            };
+            console.log("box.innerHTML", box.innerHTML);
+            console.log("swapIcon:", swapIcon);
+        }
+        
+        document.getElementById("selectedCarBox").addEventListener("click", (e) => {
+            if (e.target.classList.contains("swap-icon")) {
+                document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active-tab"));
+                document.querySelectorAll(".tab-panel").forEach(panel => panel.style.display = "none");
+                document.querySelector('.tab-btn[data-tab="vehicles"]').classList.add("active-tab");
+                document.getElementById("vehicles").style.display = "block";
+            }
+        });
+
+        function confirmVehicleSelection() {
+            const make = document.getElementById("make").value;
+            const model = document.getElementById("model").value;
+            const battery = document.getElementById("batteryCapacity").value;
+            const consumption = document.getElementById("consumptionRate").value;
+            if (!make || !model || !battery || !consumption) {
+                alert("Please complete the vehicle selection.");
+                return;
+            }
+            const plug_types = (vehiclesByMake[make] || []).find(v => v.model === model)?.plug_types || [];
+            const selectedVehicle = {
+                make: make,
+                model: model,
+                battery_capacity: battery,
+                consumption_rate: consumption,
+                plug_types: plug_types
+            };
+            // If logged in, save to database
+            if (userID) {
+                // Try to save to database
+                const vehicleList = vehiclesByMake[make] || [];
+                const vehicle = vehicleList.find(v => v.model === model);
+                if (vehicle) {
+                    fetch('/api/select_vehicle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ vehicleID: vehicle.vehicle_id })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            // If failed (user maybe logged out now), just update UI
+                            console.warn('Vehicle save failed, updating UI only.');
+                            loadUserVehicles();
+                            return;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Vehicle saved:', data);
+                        loadUserVehicles();
+                    })
+                    .catch(error => {
+                        console.error('Error saving vehicle:', error);
+                        loadUserVehicles();
+                    });
+                } else {
+                    console.warn('Selected vehicle not found in list.');
+                    loadUserVehicles();
+                }
+            } else {
+                // User not logged in → just update sidebar
+                renderVehiclePanel([selectedVehicle]);
+            }
+            // Close modal after OK
+            const vehicleModal = bootstrap.Modal.getInstance(document.getElementById('vehicleModal'));
+            vehicleModal.hide();
+        }
+        function populateUserVehicle() {
+            fetch("/api/user_vehicle")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Server error: " + response.status);
+                    }
+                    return response.json();
+                })
+                .then(vehicles => {
+                    console.log("Full vehicle array:", vehicles);
+                    renderVehiclePanel(vehicles);
+                    if (vehicles.length > 0) {
+                        selectVehicle(vehicles[0]); // Auto-select the first vehicle
+                    } else {
+                        hideSelectedCarBox();
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching saved vehicles:", error);
+                    renderVehiclePanel([]);
+                    hideSelectedCarBox();
+                });
+        }
+        let selectedVehicle = null;
+        // 1. Load User Vehicles
+        function loadUserVehicles() {
+            fetch('/api/user_vehicle')
+                .then(response => response.json())
+                .then(vehicles => {
+                    console.log('Loaded vehicles:', vehicles);
+                    renderVehiclePanel(vehicles);
+                })
+                .catch(error => {
+                    console.error('Error loading vehicles:', error);
+                    renderVehiclePanel([]);
+                });
+        }
+
+        // 2. Render Vehicle Panel
+        function renderVehiclePanel(vehicles = []) {
+            const panel = document.getElementById("vehiclePanelContent");
+            panel.innerHTML = "";
+            // Case 1: Guest user (not logged in)
+            if (!userID) {
+                if (vehicles.length === 0) {
+                    panel.innerHTML = `<button class="btn btn-secondary" onclick="openVehicleModal()">Select Vehicle</button>`;
+                    return;
+                }
+                const vehicle = vehicles[0];
+                selectedVehicle = vehicle;
+                let plugIconsHTML = (vehicle.plug_types || []).map(type => `<span class="badge bg-light text-dark mx-1">${type}</span>`).join(' ');
+                const card = document.createElement("div");
+                card.className = "selected-car-box vehicle-card mb-2 p-2";
+                card.style.background = "linear-gradient(to right, #003538, #727272)";
+                card.style.border = "2px solid #005c61d0";
+                card.style.color = "white";
+                card.style.borderRadius = "15px";
+                card.innerHTML = `
+                    <h6 style="margin:0; font-weight: 800;">${vehicle.make} ${vehicle.model}</h6>
+                    <div style="font-size: 14px; font-weight: 500;">Battery: ${vehicle.battery_capacity} kWh</div>
+                    <div style="font-size: 14px; font-weight: 500;">Consumption: ${vehicle.consumption_rate} kWh/100 miles</div>
+                    <div class="d-flex justify-content-center align-items-center mt-1">${plugIconsHTML}</div>
+                    <button class="btn btn-secondary btn-sm mt-2" style="border-radius: 12px;" onclick="openVehicleModal()">Select Another Vehicle</button>
+                `;
+                console.log("Guest vehicle loaded:", vehicle);
+                panel.appendChild(card);
+                highlightPlugTypes(vehicle.plug_types || []);
+                showSelectedCar(vehicle.make, vehicle.model);
+                return;
+            }
+            // Case 2: Logged-in user
+            if (vehicles.length === 0) {
+                panel.innerHTML = `<button class="btn btn-primary" onclick="openVehicleModal()">Add Vehicle</button>`;
+                return;
+            }
+            vehicles.forEach((vehicle, index) => {
+                const card = document.createElement("div");
+                card.className = "selected-car-box vehicle-card mb-2 p-2";
+                card.style.background = "linear-gradient(to right, #003538, #727272)";
+                card.style.border = "2px solid #005c61d0";
+                card.style.color = "white";
+                card.style.borderRadius = "15px";
+                card.style.cursor = "pointer";
+                card.setAttribute("data-vehicle-id", vehicle.vehicle_id);
+                let plugIconsHTML = (vehicle.plug_types || []).map(type => `<span class="badge bg-light text-dark mx-1">${type}</span>`).join(' ');
+                card.innerHTML = `
+                    <h6 style="margin:0; font-weight: 800;">${vehicle.make} ${vehicle.model}</h6>
+                    <div style="font-size: 14px; font-weight: 500;">Battery: ${vehicle.battery_capacity} kWh</div>
+                    <div style="font-size: 14px; font-weight: 500;">Consumption: ${vehicle.consumption_rate} kWh/100 miles</div>
+                    <div class="d-flex justify-content-center align-items-center mt-1">${plugIconsHTML}</div>
+                    <button class="btn btn-danger btn-sm mt-2" style="border-radius: 12px;">Delete</button>
+                `;
+                card.addEventListener("click", () => {
+                    selectVehicle(vehicle);
+                });
+                const deleteBtn = card.querySelector("button");
+                deleteBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    deleteVehicle(vehicle.vehicle_id);
+                });
+                panel.appendChild(card);
+                if (index === 0 && !selectedVehicle) {
+                    selectVehicle(vehicle);
+                }
+            });
+            const addButton = document.createElement("button");
+            addButton.className = "btn btn-secondary mt-2";
+            addButton.textContent = "Add Another Vehicle";
+            addButton.style.borderRadius = "12px";
+            addButton.onclick = openVehicleModal;
+            panel.appendChild(addButton);
+        }
+        // 3. Select a Vehicle
+        function selectVehicle(vehicle) {
+            selectedVehicle = vehicle;
+            highlightPlugTypes(vehicle.plug_types || []);
+            // Update selected car box in filter tab
+            const box = document.getElementById("selectedCarBox");
+            const nameElement = box.querySelector(".car-name");
+            nameElement.textContent = `${vehicle.make} ${vehicle.model}`;
+            box.style.display = "flex";
+            // Highlight the selected card visually
+            document.querySelectorAll('.vehicle-card').forEach(card => {
+                if (parseInt(card.getAttribute('data-vehicle-id')) === vehicle.vehicle_id) {
+                    card.style.border = '2px solid #005c61d0';
+                } else {
+                    card.style.border = 'none';
+                }
+            });
+        }
+        // 4. Delete Vehicle
+        function deleteVehicle(vehicleID) {
+            if (!confirm("Are you sure you want to delete this vehicle?")) return;
+            fetch('/api/delete_vehicle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vehicleID: vehicleID })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Vehicle deleted:', data);
+                selectedVehicle = null; // Reset selection
+                loadUserVehicles();     // Reload panel
+            })
+            .catch(error => {
+                console.error('Error deleting vehicle:', error);
+            });
+        }
+        // 5. Highlight Plug Types
+        function highlightPlugTypes(types) {
+            if (typeof types === "string") {
+                types = types.split(",").map(s => s.trim());
+            }
+            selectedPlugTypes = new Set(types);
+            document.querySelectorAll('.plug-icon-box').forEach(elem => {
+                const type = elem.getAttribute('data-plug-type');
+                if (selectedPlugTypes.has(type)) {
+                    elem.classList.add('selected-plug');
+                } else {
+                    elem.classList.remove('selected-plug');
+                }
+            });
+            updatePlugTypeFiltering();
+            const showAllToggle = document.getElementById("loadAllChargers");
+            if (showAllToggle) toggleAllChargers(showAllToggle.checked);
+        }
+        // 6. Modal functions
+        function openVehicleModal() {
+            const modal = new bootstrap.Modal(document.getElementById('vehicleModal'));
+            modal.show();
+        }
+        function hideSelectedCarBox() {
+            const box = document.getElementById("selectedCarBox");
+            box.style.display = "none";
+        }
+
+        var map;
+        let cloudsLayer = null;
+        let cloudsVisible = false;
+        
+        let baseLayersVisible = false;
+        function initializeMap(latitude, longitude) {
+            map = L.map('map').setView([latitude, longitude], 10);
+            map.zoomControl.setPosition('bottomright');
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            const locateControl = L.control.locate({
+                position: 'bottomright', 
+                flyTo: false,
+                keepCurrentZoomLevel: true, 
+                drawCircle: true, 
+                markerStyle: {
+                    color: "blue",
+                    fillColor: "blue",
+                    fillOpacity: 0.8
+                },
+                strings: {
+                    title: "Show My Location",
+                    popup: "Your location is within {distance} meters",
+                }
+            }).addTo(map);
+            // Automatically locate on load
+            map.locate({ setView: false, watch: false });
+            map.on('locationfound', function (e) {
+                userLocation = e.latlng;
+                console.log("Auto-detected userLocation:", userLocation);
+            });
+            map.on('locationerror', function(e) {
+                alert(e.message);
+            });
+            map.createPane("rankedPane");
+            map.getPane("rankedPane").style.zIndex = 650;          
+            cloudsLayer = L.tileLayer(`https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${apiKey}`, {
+                attribution: 'Map data © <a href="https://openweathermap.org">OpenWeatherMap</a>',
+                opacity: 1.0
+            });
+            const windLayer = L.tileLayer(`https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${apiKey}`, {
+                attribution: 'Map data © <a href="https://openweathermap.org">OpenWeatherMap</a>',
+                opacity: 1.0
+            });
+            const tempLayer = L.tileLayer(`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${apiKey}`, {
+                attribution: 'Map data © <a href="https://openweathermap.org">OpenWeatherMap</a>',
+                opacity: 1.0
+            });
+            // Base layers
+            const openStreet = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+            });
+            const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenTopoMap'
+            });
+            const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © Esri — Source: Esri, DeLorme, NAVTEQ',
+            maxZoom: 19
+            });
+            const esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © Esri — Source: USGS, Esri, FAO, NOAA',
+            maxZoom: 17
+            });
+            const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd'
+            });
+            const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd'
+            });
+
+            const overlayMaps = {
+                "Cloud Coverage": cloudsLayer,
+                "Temperature": tempLayer,
+                "Wind": windLayer
+            };
+
+            const baseLayers = {
+                "OpenStreetMap": openStreet,
+                "OpenTopoMap": topoMap,
+                "Esri_WorldStreetMap": esriStreet,
+                "Esri_WorldTopoMap": esriTopo,
+                "CartoDB.Positron": cartoLight,
+                "CartoDB.DarkMatter": cartoDark
+            };
+
+            const overlayControl = L.control.layers(null, overlayMaps, { collapsed: true, position: 'bottomright' }).addTo(map);
+            const layerControl = L.control.layers(baseLayers, {}, { collapsed: true, position: 'bottomright' }).addTo(map);
+    
+            openStreet.addTo(map);
+            locateControl.start();
+            getUserID(); 
+            loadChargers();
+        }
+        
+        function getUserID() {
+            fetch('/api/get_user_id')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.userID) {
+                        userID = data.userID;
+                        renderVehiclePanel();
+                        populateUserVehicle();
+                        if (data.role === "Operator") {
+                            const viewGridItem = document.getElementById("viewGridNavItem");
+                            if (viewGridItem) viewGridItem.style.display = "block";
+                        }
+                    } else {
+                        userID = null;
+                        renderVehiclePanel();  // still refresh UI
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user ID:', error);
+                    userID = null;
+                    renderVehiclePanel();
+                });
+        }
+
+        initializeMap(35.0, 33.0);
+
+    </script>
+  </body>
+</html>

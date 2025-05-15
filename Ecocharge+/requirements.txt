@@ -1,0 +1,10 @@
+Flask
+PyYAML
+gunicorn
+flask-session
+bcrypt
+geopy
+APScheduler
+authlib
+python-dotenv
+requests

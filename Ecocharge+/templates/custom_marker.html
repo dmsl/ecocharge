@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet Custom Markers</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        /* Set the map height */
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Leaflet Map with Green, Red, and Orange Markers</h2>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map centered at a location
+        var map = L.map('map').setView([37.9838, 23.7275], 12); // Athens, Greece
+
+        // Load OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Define custom icons for markers
+        var greenIcon = L.icon({
+            iconUrl: "{{ url_for('static', filename='greenDot.png') }}", // Green marker image
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        var redIcon = L.icon({
+            iconUrl: '/static/taxi.png', // Red marker image
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        var orangeIcon = L.icon({
+            iconUrl: '/static/orangeDot.png', // Orange marker image
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        // Add the Green Marker
+        L.marker([37.9838, 23.7275], { icon: greenIcon })
+            .addTo(map)
+            .bindPopup("<b>Green Marker</b><br>This is a green marker.");
+
+        // Add the Red Marker
+        L.marker([37.9900, 23.7400], { icon: redIcon })
+            .addTo(map)
+            .bindPopup("<b>Red Marker</b><br>This is a red marker.");
+
+        // Add the Orange Marker
+        L.marker([37.9700, 23.7200], { icon: orangeIcon })
+            .addTo(map)
+            .bindPopup("<b>Orange Marker</b><br>This is an orange marker.");
+
+    </script>
+
+</body>
+</html>
