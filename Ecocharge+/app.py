@@ -6,7 +6,6 @@ import json
 from datetime import datetime, timezone, timedelta
 from geopy.distance import geodesic
 from zoneinfo import ZoneInfo
-import yaml
 import os
 import traceback
 import re
@@ -15,7 +14,6 @@ import random
 import time
 from math import radians, cos, sin, asin, sqrt, atan2
 from collections import defaultdict
-from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
@@ -46,23 +44,6 @@ def internal_server_error(e):
 
 def connect_db():
     return sqlite3.connect(DATABASE_FILE)
-
-# Helper function to add or update a section in the configuration
-def update_section(config, section, data):
-    if section not in config:
-        config[section] = []
-    config[section].append(data)
-    return config
-
-# Helper function to find an item by name in a section
-def find_item(section, name, value):
-    config = load_config()
-    if section in config:
-        for item in config[section]:
-            print(item)
-            if item.get(name) == value:
-                return item
-    return None
 
 def get_vehicle_data():
     conn = connect_db()
@@ -99,18 +80,6 @@ def get_vehicle_data():
         })
 
     return vehicles_by_make
-
-# Load YAML config
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, 'r') as file:
-            return yaml.safe_load(file) or {}
-    return {}
-
-# Save YAML config
-def save_config(config):
-    with open(CONFIG_FILE, 'w') as file:
-        yaml.dump(config, file, default_flow_style=False, indent=2, sort_keys=False)
 
 @app.route('/api/get_user_id')
 def get_user_id():
@@ -529,167 +498,6 @@ def get_chargers():
             charger["grid_power_percentage"] = "N/A"
 
     return jsonify(chargers_from_db), 200
-
-# API to add a charger
-@app.route('/api/chargers', methods=['POST'])
-def add_charger():
-    if 'user_id' not in session:
-        return jsonify({"error": "User not logged in"}), 401
-
-    user_id = session['user_id']
-    charger_data = request.json
-
-    user_given_name = charger_data.get('name')
-    charger_type = charger_data.get('type', 'custom')
-    template = charger_data.get('template')
-    status = charger_data.get('status', 'C')
-    power = charger_data.get('power')
-    enabled = charger_data.get('enabled', True)
-    loadpoint_id = charger_data.get('loadpointID')
-
-    if not all([user_given_name, template, power, loadpoint_id]):
-        return jsonify({"error": "Missing required fields"}), 400
-
-    # Load existing evcc.yaml
-    config = load_config()
-
-    # Ensure loadpoints exist before adding a charger
-    if not config.get("loadpoints"):
-        return jsonify({"error": "No loadpoints found in evcc.yaml"}), 400
-
-    # Find the last added loadpoint
-    latest_loadpoint = config["loadpoints"][-1] if config["loadpoints"] else None
-
-    if not latest_loadpoint:
-        return jsonify({"error": "Loadpoint not found in evcc.yaml"}), 400
-
-    try:
-        # Insert charger into database and retrieve ID
-        conn = connect_db()
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO Charger (name, type, template, status, power, enabled, LoadpointID, UserID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (user_given_name, charger_type, template, status, power, enabled, loadpoint_id, user_id)
-        )
-        conn.commit()
-        conn.close()
-
-        charger_id = get_next_charger_id(config)  # Get charger_id from evcc.yaml
-
-        # Format charger name as "charger_[charger_id]"
-        charger_name = f"charger_{charger_id}"
-        meter_name = f"meter_{charger_name}"
-
-         # Update the existing loadpoint instead of adding a new one
-        latest_loadpoint["charger"] = charger_name
-        latest_loadpoint["meter"] = meter_name
-        
-        randomIndex = math.floor(random.random() * 2)
-
-        # Add the new charger
-        charger_entry = {
-            "name": charger_name,
-            "type": charger_type,
-            "enable": {
-                "source": "js",
-                "vm": "shared",
-                "script": f'logState();\nvar lp = state.loadpoints[{randomIndex}];\nlp.enabled = enable;\nif (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;'
-            },
-            "enabled": {
-                "source": "js",
-                "vm": "shared",
-                "script": f'state.loadpoints[{randomIndex}].enabled;'
-            },
-            "status": {
-                "source": "js",
-                "vm": "shared",
-                "script": f'if (state.loadpoints[{randomIndex}].enabled) "C"; else "B";'
-            },
-            "maxcurrent": {
-                "source": "js",
-                "vm": "shared",
-                "script": f'logState();\nvar lp = state.loadpoints[{randomIndex}];\nlp.maxcurrent = maxcurrent;\nif (lp.enabled) lp.chargepower = lp.maxcurrent * 230 * lp.phases; else lp.chargepower = 0;'
-            }
-        }
-        config.setdefault("chargers", []).append(charger_entry)
-
-        # Add a corresponding meter
-        meter_entry = {
-            "name": meter_name,
-            "type": "custom",
-            "power": {
-                "source": "js",
-                "vm": "shared",
-                "script": f"state.loadpoints[{randomIndex}].chargepower;"
-            }
-        }
-        config.setdefault("meters", []).append(meter_entry)
-
-        # Save changes to evcc.yaml
-        save_config(config)
-
-        return jsonify({"message": "Charger added successfully", "charger_id": charger_id}), 201
-
-    except sqlite3.Error as e:
-        return jsonify({"error": f"Database error: {str(e)}"}), 500
-
-# API Endpoint to get all loadpoints
-@app.route('/api/loadpoints', methods=['GET'])
-def get_loadpoints():
-    config = load_config()
-    return jsonify(config.get('loadpoints', [])), 200
-
-#API Endpoint to add a loadpoint
-@app.route('/api/loadpoints', methods=['POST'])
-def add_loadpoint():
-
-    data = request.json
-
-    title = data.get('title')
-    mode = data.get('mode')
-    vehicle_title = data.get('vehicleTitle')
-
-    if not title or not mode:
-        return jsonify({"error": "Title and Mode are required"}), 400
-
-    try:
-        conn = connect_db()
-        cursor = conn.cursor()
-
-        # Insert loadpoint into the database
-        cursor.execute("""
-            INSERT INTO Loadpoints (title, mode, vehicle)
-            VALUES (?, ?, ?)
-        """, (title, mode, vehicle_title))
-        
-        loadpoint_id = cursor.lastrowid  # Get the new loadpoint ID
-        conn.commit()
-        conn.close()
-
-        config = load_config()
-
-        if "loadpoints" not in config:
-            config["loadpoints"] = []
-
-        # Add the new loadpoint entry
-        loadpoint_entry = {
-            "title": title,
-            "charger": None,  # Will be updated when a charger is added
-            "mode": mode,
-            "meter": None,  # Will be updated when a charger is added
-            "vehicle": f"vehicle_5"
-        }
-        config["loadpoints"].append(loadpoint_entry)
-
-        update_state_loadpoints(config, loadpoint_id)
-
-        # Save updated evcc.yaml
-        save_config(config)
-
-        return jsonify({"message": "Loadpoint added successfully", "loadpointID": loadpoint_id}), 201
-
-    except sqlite3.Error as e:
-        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 @app.route('/')
 def home():
@@ -1450,13 +1258,13 @@ def forecast_solar_scores():
 
                 results[charger_id] = solar_percentage
             except Exception as e:
-                print(f"❌ Error forecasting charger {charger_id}: {e}")
+                print(f"Error forecasting charger {charger_id}: {e}")
                 continue
 
         return jsonify(results)
 
     except Exception as e:
-        print("❌ Forecast Error:", e)
+        print("Forecast Error:", e)
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
@@ -1787,18 +1595,6 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     return R * c
-
-# Create scheduler
-#scheduler = BackgroundScheduler()
-#
-## Add the scheduled job
-#scheduler.add_job(func=get_all_weather_data, trigger="interval", minutes=30)
-#
-## Start the scheduler
-#scheduler.start()
-#
-## Shut down the scheduler cleanly on exit
-#atexit.register(lambda: scheduler.shutdown())
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5001, debug=True)
