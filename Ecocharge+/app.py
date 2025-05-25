@@ -26,7 +26,7 @@ app = Flask(__name__, static_url_path='/static')
 app.secret_key = os.getenv("SECRET_KEY")
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.config["SESSION_TYPE"] = "filesystem"  # Store session data in files
-app.config["SESSION_PERMANENT"] = False  # Optional: Sessions expire when the browser is closed
+app.config["SESSION_PERMANENT"] = False  # Sessions expire when the browser is closed
 app.config["SESSION_COOKIE_SECURE"] = True  # Needed on HTTPS
 app.config["SESSION_COOKIE_DOMAIN"] = "micro-grid.online"
 Session(app)
@@ -857,7 +857,7 @@ def get_nearby_chargers():
             count += 1
             print(f"Charger {charger['name']} - Score: {charger['score']} - Distance: {charger['distance_km']}km")
 
-    print(f"🔍 Found {count} nearby chargers within {radius} km radius.")
+    print(f"Found {count} nearby chargers within {radius} km radius.")
         # Sort by score descending
     nearby_chargers = sorted(nearby_chargers, key=lambda x: x['score'], reverse=True)
 
@@ -893,7 +893,7 @@ def get_nearby_chargers():
         power = charger['power']
         charger_types = charger.get('types', ['Unknown'])
 
-        print(f"🔋 {charger_id} {location} at ({lat_str}, {lng_str}) — {location} | Eco: {eco_score} | Travel: {travel_score} | Solar: {solar_score} | Avail: {availability} | ETA: {mins_to_arrive} mins")
+        print(f"{charger_id} {location} at ({lat_str}, {lng_str}) — {location} | Eco: {eco_score} | Travel: {travel_score} | Solar: {solar_score} | Avail: {availability} | ETA: {mins_to_arrive} mins")
 
     return jsonify({
         "latitude": lat,
@@ -963,7 +963,7 @@ def forecasted_ranked_chargers():
         return jsonify({"ranked_chargers": ranked})
 
     except Exception as e:
-        print("❌ Error in /forecasted_ranked_chargers:", e)
+        print("Error in /forecasted_ranked_chargers:", e)
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
@@ -1469,65 +1469,6 @@ def get_charger_types():
     types = [{"id": row[0], "name": row[1]} for row in c.fetchall()]
     conn.close()
     return jsonify(types)
-
-#@app.route("/api/forecast_solar_scores", methods=["POST"])
-#def forecast_solar_scores():
-#    try:
-#        data = request.get_json()
-#        forecast_time_str = data.get("forecast_time")
-#        print("forecast_time_str: ", {forecast_time_str})
-#
-#        if not forecast_time_str:
-#            return jsonify({"error": "Missing forecast_time"}), 400
-#
-#        forecast_dt = datetime.strptime(forecast_time_str, "%Y-%m-%d %H:%M:%S")
-#        print("forecast_dt: ", {forecast_dt})
-#        forecast_hour = forecast_dt.hour
-#        forecast_month = forecast_dt.month
-#
-#        # Get microgrid and weather data
-#        charger_to_group, grid_details, hourly_profile, monthly_productions = get_microgrid_data()
-#
-#        conn = connect_db()
-#        cursor = conn.cursor()
-#        cursor.execute("SELECT id, power FROM Chargers")
-#        charger_power_map = dict(cursor.fetchall())
-#        conn.close()
-#
-#        result = []
-#
-#        for charger_id, group_id in charger_to_group.items():
-#            power_demand = charger_power_map.get(charger_id, 0)
-#            if group_id not in grid_details:
-#                continue
-#
-#            month_kwh = monthly_productions.get(group_id, {}).get(forecast_month, 0)
-#            hour_fraction = hourly_profile.get(forecast_hour, 0)
-#            efficiency = grid_details[group_id].get("efficiency", 1.0)
-#
-#            # We'll simulate clouds as 0 for now (perfect sun)
-#            clouds = 0  # Or you could pass cloud % from frontend later
-#            solar_eff = estimate_solar_power2(clouds, forecast_dt.replace(tzinfo=ZoneInfo("Europe/Nicosia")).strftime("%Y-%m-%d %H:%M:%S%z")) / 100.0
-#            total_solar_power_now = (month_kwh / 30.0) * hour_fraction * efficiency * solar_eff
-#
-#            solar_power_now = total_solar_power_now  # Assume full power delivered
-#            solar_power_percentage = round(min(solar_power_now / power_demand, 1.0) * 100, 2) if power_demand else 0
-#
-#            result.append({
-#                "charger_id": charger_id,
-#                "group_id": group_id,
-#                "solar_power_estimate": solar_power_percentage,
-#                "solar_power_generated": round(solar_power_now, 2),
-#                "power_demand": power_demand
-#            })
-#
-#        return jsonify({"forecast": result})
-#
-#    except Exception as e:
-#        print("❌ Forecast Error:", e)
-#        import traceback
-#        traceback.print_exc()
-#        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/microgrid_details/<int:group_id>")
