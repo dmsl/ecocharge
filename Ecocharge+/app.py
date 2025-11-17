@@ -43,7 +43,15 @@ def internal_server_error(e):
     return jsonify({"error": "Internal Server Error"}), 500
 
 def connect_db():
-    return sqlite3.connect(DATABASE_FILE)
+    conn = sqlite3.connect(
+        DATABASE_FILE,
+        timeout=30,             # prevent "database is locked"
+        check_same_thread=False # needed under Apache/mod_wsgi
+    )
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")     # major improvement
+    conn.execute("PRAGMA busy_timeout = 30000;") # wait 30s for locks
+    return conn
 
 def get_vehicle_data():
     conn = connect_db()
