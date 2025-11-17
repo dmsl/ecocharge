@@ -8,7 +8,7 @@ html, body {
     padding: 0;
     width: 100vw;
     height: 100vh;
-    overflow: hidden; /* Prevent scrolling */
+    overflow: hidden;
 }
 
 #map {
@@ -17,24 +17,23 @@ html, body {
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 1; /* Ensure it's below the navbar */
-    overflow: visible !important; /* Prevent Leaflet elements from being cropped */
+    z-index: 1;
+    overflow: visible !important;
     transition: opacity 0.3s ease;
 }
 
-/* Full-page modal that appears under the navbar */
 #myGridContainer {
     display: none;
     position: fixed;
-    top: 50px; /* Below the navbar */
+    top: 50px;
     left: 0;
     width: 100%;
-    height: calc(100vh - 50px); /* Full height below navbar */
+    height: calc(100vh - 50px);
     background-color: white;
     text-align: center;
     padding-top: 20px;
     z-index: 1000;
-    overflow-y: auto; /* Enables vertical scrolling */
+    overflow-y: auto;
 }
 
 .toggle-button {
@@ -57,13 +56,12 @@ html, body {
 }
 
 .filters-container {
-    position: relative; /* Parent element for absolute positioning */
-    display: inline-block; /* Ensures the form aligns properly */
+    position: relative;
+    display: inline-block;
 }
 
-/* Form Container Styling */
 .form-container {
-    display: none; /* Hidden by default */
+    display: none;
     font-family: inherit; 
     position: absolute;
     top: 90px;
@@ -224,7 +222,6 @@ input[type="submit"]:hover {
   display: inline-flex;
   top: 50px;
   align-items: center;
-  /*justify-content: center;*/
   background-color: #0098a3;
   color: rgb(255, 255, 255);
   font-weight: bold;
@@ -283,7 +280,6 @@ input[type="submit"]:hover {
     right: 1%;
     z-index: 1050; 
     background: none;
-    /*padding: 5px 10px;*/
     border-radius: 5px;
 }
 
@@ -334,7 +330,6 @@ input[type="submit"]:hover {
     height:auto !important;
 }
 
-/* Ensures grid content does not overflow */
 #gridContent {
     display: flex;
     flex-wrap: wrap;
@@ -343,7 +338,6 @@ input[type="submit"]:hover {
     padding: 20px;
 }
 
-/* Individual card styling */
 .grid-item {
     background: #f8f9fa;
     border: 1px solid #ddd;
@@ -358,13 +352,11 @@ input[type="submit"]:hover {
     transform: scale(1.02);
 }
 
-/* Loadpoint title */
 .grid-item strong {
     font-size: 16px;
     color: #333;
 }
 
-/* Charger list */
 .grid-item ul {
     list-style: none;
     padding: 0;
@@ -383,13 +375,6 @@ input[type="submit"]:hover {
     background-color: #1495ac;
 }
 
-/*.leaflet-routing-alternatives-container {
-    position: absolute !important;
-    bottom: 50px !important; 
-    left: 10px!important; 
-    z-index: 1000 !important;
-}*/
-
 .leaflet-routing-container {
     width: 320px;
     background-color: rgb(255, 255, 255) !important;
@@ -401,23 +386,21 @@ input[type="submit"]:hover {
 
 .charger-info {
     position: fixed;
-    /*transform: translateX(-50%);*/
     width: 300px;
     background: #ffffff;
     padding: 15px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-    /*border-radius: 8px;*/
     border: 2px solid #ffffff;
-    display: none; /* Initially hidden*/
+    display: none;
     z-index: 1000;
     transition: opacity 0.3s ease-in-out;
 }
 
 #charger-info-container {
-    position: fixed; /* Ensures it's relative to the viewport */
-    top: 20%; /* Adjust based on preference */
-    left: 1%; /* Ensures it is inside the screen */
-    max-width: 300px; /* Prevents it from being too wide */
+    position: fixed;
+    top: 20%;
+    left: 1%;
+    max-width: 300px;
     background: white;
     padding: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
@@ -443,22 +426,22 @@ input[type="submit"]:hover {
 .charger-header {
     display: flex;
     align-items: center;
-    gap: 10px; /* Space between icon and title */
+    gap: 10px;
 }
 
 #charger-icon {
-    width: 25px;  /* Adjust width */
-    height: auto; /* Maintain aspect ratio */
-    max-height: 22px; /* Ensure it doesn't get too big */
+    width: 25px;
+    height: auto;
+    max-height: 22px;
     border-radius: 5px;
-    object-fit: contain; /* Keeps proportions without cutting */
+    object-fit: contain;
     margin: 10px;
 }
 
 #charger-title {
-    font-size: 18px; /* Reduce title size */
+    font-size: 18px;
     font-weight: bold;
-    margin: 0; /* Remove excess spacing */
+    margin: 0;
 }
 
 #charger-details {
