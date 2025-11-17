@@ -67,13 +67,14 @@ operator99@email.com -> password: pass99
 Automate periodic weather updates and forecast generation using crontab -e:
 
 # Update real-time weather for each charger every hour
-0 */1 * * * /usr/bin/python3 /path/to/update_weather.py
+	0 */1 * * * /usr/bin/python3 /home/ecocharge/ecochargeplus/update_weather.py
 
 # Fetch daily 5-day/3-hour forecasts every 3 hours and log output
-* */3 * * * DATABASE_FILE=/path/to/MicroGrid.db /usr/bin/python3 /path/to/daily_forecast_fetcher.py >> /path/to/cron2.log 2>&1
+	* */3 * * * DATABASE_FILE=/home/ecocharge/ecochargeplus/.data/MicroGrid.db;/usr/bin/python3 /home/ecocharge/ecochargeplus/daily_forecast_fetcher.py >> /home/ecocharge/ecochargeplus/cron2.log 2>&1
 
 # Save actual solar production for each microgrid once every hour
-0 * * * * DATABASE_FILE=/path/to/MicroGrid.db /usr/bin/python3 /path/to/save_actual_production.py >> /path/to/cron.log 2>&1
+	0 * * * * DATABASE_FILE=/home/ecocharge/ecochargeplus/.data/MicroGrid.db; /usr/bin/python3 /home/ecocharge/ecochargeplus/save_actual_production.py >> /home/ecocharge/ecochargeplus/cron.log 2>&1
+
 
 
 --- Setup Instructions ---
