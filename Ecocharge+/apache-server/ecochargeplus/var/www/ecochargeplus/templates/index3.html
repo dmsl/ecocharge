@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroGrid Eco Charging Network Map</title>
+    <style>
+
+        .button-container {
+            display: flex;
+            justify-content: space-between; /* Ensures left-right alignment */
+            margin-top: 20px;
+        }
+
+        .cancel-button {
+            /*padding: 5px 20px;*/
+            width: 100px;
+            height: 50px;
+            background-color: #ccc; /* Gray background for cancel */
+            color: black;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .cancel-button:hover {
+            background-color: #a0a0a0; /* Slightly darker gray on hover */
+        }
+
+        /* Ensures each label-input pair is aligned correctly */
+        .form-section label {
+            display: block;  /* Makes labels full width */
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* Ensures all input fields take full width */
+        .input-box, 
+        select, 
+        input[type="number"] {
+            width: 100%;  /* Ensures input fields do not shrink */
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box; /* Ensures padding doesn't affect width */
+            background-color: #f9f9f9;
+        }
+
+        /* Prevents flex shrinking */
+        .form-section {
+            flex: 1;  /* Allows each section to grow equally */
+            min-width: 300px; /* Ensures enough space */
+        }
+
+        /* Modal Background (Initially Hidden) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto; /* Ensures modal content can be scrolled */
+        }
+
+        /* Modal Content Box */
+        .modal-content {
+            display: flex;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 1000px;
+            flex-direction: column;
+            position: relative;
+            max-width: 1000px; /* Set max width */
+            max-height: 90vh; /* Prevents the modal from being too tall */
+            overflow-y: auto; /* Ensures the scrollbar appears only in the grid */
+        }
+
+        body.modal-open {
+            overflow: hidden; /* Prevents background scroll */
+        }
+
+
+        /* Close Button */
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+            background: none;
+            border: none;
+            outline: none;
+        }
+
+        /* Button Styles */
+        .toggle-button {
+            padding: 10px 20px;
+            background-color: #16095e;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            width: auto; /* Prevents full-width stretching */
+            max-width: 300px; /* Optional: Restricts max width */
+            margin-left: auto; /* Centers the button */
+            margin-right: auto; /* Centers the button */
+        }
+
+        .toggle-button:hover {
+            background-color: #21108a;
+        }
+
+        /* Form container */
+        .form-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            padding: 20px;
+            width: 90%;
+            border-radius: 5px;
+        }
+
+        /* Grid container */
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            max-height: 70vh; /* Enables scrolling */
+        }
+
+        .grid-item {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- "My Grid" Button -->
+    <button class="toggle-button" onclick="openGridModal()">My Grid</button>
+
+    <!-- "My Grid" Modal -->
+    <div id="gridModal" class="modal" onclick="outsideClick(event)">
+        <div class="modal-content" onclick="event.stopPropagation();">
+            <span class="close" onclick="closeGridModal()">&times;</span>
+            <h2>My Grid - Loadpoints & Chargers</h2>
+            <div id="gridContent" class="grid-container">
+                <p>Loading...</p> <!-- Default message before data loads -->
+            </div>
+            <button class="toggle-button" onclick="openFormModal()">Add Loadpoint/Charger</button>
+        </div>
+    </div>
+
+    <!-- "Add Loadpoint/Charger" Modal -->
+    <div id="formModal" class="modal" onclick="outsideClick(event)">
+        <div class="modal-content" onclick="event.stopPropagation();">
+            <span class="close" onclick="closeFormModal()">&times;</span>
+            <h2>Add Loadpoint and Charger</h2>
+
+            <div class="form-container">
+                <!-- Loadpoint Section -->
+                <div class="form-section">
+                    <h3>Loadpoint Details</h3>
+                    <form id="addLoadpointForm">
+                        <label for="loadpointTitle">Loadpoint Title:</label>
+                        <input type="text" id="loadpointTitle" class="input-box" required placeholder="eg. My Garage"/>
+
+                        <label for="loadpointMode">Mode:</label>
+                        <select id="loadpointMode">
+                            <option value="pv">Photovoltaic (PV)</option>
+                            <option value="off">Off</option>
+                        </select>
+
+                        <label for="vehicleTitle">Vehicle Title:</label>
+                        <input type="text" id="vehicleTitle" class="input-box" required placeholder="eg. My Car"/>
+                    </form>
+                </div>
+
+                <!-- Charger Section -->
+                <div class="form-section">
+                    <h3>Charger Details</h3>
+                    <form id="addChargerForm">
+                        <label for="chargerName">Charger Name:</label>
+                        <input type="text" id="chargerName" class="input-box" required placeholder="eg. myCharger"/>
+
+                        <label for="chargerType">Type:</label>
+                        <select id="chargerType">
+                            <option value="custom">custom</option>
+                        </select>
+
+                        <label for="chargerTemplate">Template:</label>
+                        <input type="text" id="chargerTemplate" class="input-box" required placeholder="eg. demo-charger"/>
+
+                        <label for="chargerStatus">Status:</label>
+                        <select id="chargerStatus">
+                            <option value="C">C (Connected)</option>
+                            <option value="D">D (Disconnected)</option>
+                        </select>
+
+                        <label for="chargerPower">Power (W):</label>
+                        <input type="number" id="chargerPower" class="input-box" required/>
+
+                        <label for="chargerEnabled">Enabled:</label>
+                        <select id="chargerEnabled">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            <div class="button-container">
+                <button type="button" class="cancel-button" onclick="closeFormModal()">Cancel</button>
+                <button type="submit" class="toggle-button" onclick="submitLoadpointAndCharger()">Add Loadpoint & Charger</button>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        // Open My Grid Modal and Fetch Data
+        function openGridModal() {
+            let modal = document.getElementById('gridModal');
+            modal.style.display = 'flex';
+
+            fetch('/api/my_grid')
+                .then(response => response.json())
+                .then(data => {
+                    let gridContent = document.getElementById('gridContent');
+                    gridContent.innerHTML = '';
+
+                    if (data.loadpoints.length === 0) {
+                        gridContent.innerHTML = '<p>No Loadpoints or Chargers Found.</p>';
+                        return;
+                    }
+
+                    data.loadpoints.forEach(lp => {
+                        let lpContainer = document.createElement('div');
+                        lpContainer.className = 'grid-item';
+                        lpContainer.innerHTML = `<strong>Loadpoint:</strong> ${lp.title} - Mode: ${lp.mode}`;
+                        
+                        if (lp.chargers.length > 0) {
+                            let chargerList = document.createElement('ul');
+                            lp.chargers.forEach(charger => {
+                                let chargerItem = document.createElement('li');
+                                chargerItem.innerHTML = `<strong>Charger:</strong> ${charger.name} - Power: ${charger.power}W`;
+                                chargerList.appendChild(chargerItem);
+                            });
+                            lpContainer.appendChild(chargerList);
+                        } else {
+                            lpContainer.innerHTML += `<br><em>No chargers linked.</em>`;
+                        }
+
+                        gridContent.appendChild(lpContainer);
+                    });
+                })
+                .catch(error => console.error('Error loading My Grid:', error));
+        }
+
+        function closeGridModal() {
+            document.getElementById('gridModal').style.display = 'none';
+        }
+
+        function openFormModal() {
+            document.getElementById('formModal').style.display = 'flex';
+            document.body.classList.add('modal-open'); // Prevents background scroll
+        }
+
+        function closeFormModal() {
+            document.getElementById('formModal').style.display = 'none';
+            document.body.classList.remove('modal-open'); // Restores background scroll
+        }
+
+        function submitLoadpointAndCharger() {
+            let loadpointData = {
+                title: document.getElementById('loadpointTitle').value,
+                mode: document.getElementById('loadpointMode').value,
+                vehicleTitle: document.getElementById('vehicleTitle').value
+            };
+
+            fetch('/api/loadpoints', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(loadpointData)
+            })
+            .then(response => response.json())
+            .then(loadpointResponse => {
+                if (loadpointResponse.error) {
+                    alert(loadpointResponse.error);
+                    return;
+                }
+
+                let chargerData = {
+                    name: document.getElementById('chargerName').value,
+                    type: document.getElementById('chargerType').value,
+                    template: document.getElementById('chargerTemplate').value,
+                    status: document.getElementById('chargerStatus').value,
+                    power: parseInt(document.getElementById('chargerPower').value),
+                    enabled: document.getElementById('chargerEnabled').value === "true",
+                    loadpointID: loadpointResponse.loadpointID  // Link Charger to Loadpoint
+                };
+
+                return fetch('/api/chargers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(chargerData)
+                });
+            })
+            .then(response => response.json())
+            .then(chargerResponse => {
+                if (chargerResponse.error) {
+                    alert(chargerResponse.error);
+                    return;
+                }
+
+                alert("Loadpoint and Charger added successfully!");
+                closeFormModal();
+                openGridModal();
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+
+    </script>
+</body>
+</html>

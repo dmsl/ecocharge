@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Complete Profile</title>
+</head>
+
+<style>
+    html {
+        position: relative;
+        height: 100%;
+    }
+    
+    body {
+        padding: 0;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+    }
+
+    .container {
+            position: relative; 
+            background-color: #33333371;
+            padding: 20px;
+            border-radius: 40px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+            width: 100%;
+            z-index: 10;
+            backdrop-filter: blur(12px);
+        }
+</style>
+
+<body>
+    <div class="container">
+        <form method="POST">
+            <h2>Sign In as</h2>
+            <label>
+            <input type="radio" name="role" value="User" required> Regular User
+            </label><br>
+            <label>
+            <input type="radio" name="role" value="Operator"> Operator
+            </label><br><br>
+            <button type="submit">Continue</button>
+        </form>
+    </div>
+</body>
+</html>
+      

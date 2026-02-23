@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Microgrid</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    </head>
+
+    <body>
+        <h2>{{ microgrid[1] }} (MicroGrid ID: {{ microgrid[0] }})</h2>
+        <p><strong>City:</strong> {{ microgrid[2] }} | <strong>Country:</strong> {{ microgrid[3] }}</p>
+        <p><strong>Capacity:</strong> {{ microgrid[4] }} kWp</p>
+        <p><strong>Efficiency:</strong> {{ microgrid[5] * 100 }}%</p>
+        <p><strong>Inverter Limit:</strong> {{ microgrid[6] }} kW</p>
+        <p><strong>Degradation Rate:</strong> {{ microgrid[7] }}%</p>
+        <p><strong>Annual Production:</strong> {{ microgrid[8] }} kWh</p>
+
+        <h4>Chargers:</h4>
+        <ul>
+        {% for charger in chargers %}
+            <li>{{ charger[3] }} | Address: {{ charger[4] }} | Power: {{ charger[7] }} kW</li>
+        {% endfor %}
+        </ul>
+
+        <a href="/edit_microgrid/{{ microgrid[0] }}" class="btn btn-warning">Modify</a>
+
+    </body>
+        

@@ -1,0 +1,289 @@
+/* General map and layout styling */
+body {
+    padding: 0;
+    margin: 0;
+    font-family: "Arial", sans-serif;
+}
+html, body, #map {
+    height: 100%;
+    width: 100vw;
+}
+#map { height: 100vh; } /* Full viewport height for the map */
+
+h1 {
+    background-color: #ffffff;
+    margin: 70px;
+}
+
+/* Input boxes for origin and destination */
+.location-inputs {
+    position: fixed;
+    top: 10px;
+    left: 1%; 
+    transform: translateX(0); /* Remove centering shift */
+    z-index: 1000;
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background-color: rgb(255, 255, 255);
+    border: 1px solid #cbcbd6;
+    border-radius: 25px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: auto; /* Prevents full-width expansion */
+}
+
+.location-inputs input {
+    padding: 8px;
+    border: 1px solid #cbcbd6;
+    border-radius: 25px;
+    font-size: 14px;
+    width: 200px; /* Set a fixed width */
+}
+
+/* Toggle button styling */
+.toggle-button {
+    padding: 10px 20px;
+    background-color: #16095e;
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.toggle-button:hover {
+    background-color: #21108a;
+}
+
+/* Form Container Styling */
+.form-container {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    background-color: #ffffff;
+    padding: 20px;
+    width: 240px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+/* Input Box Styling */
+.input-box {
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+}
+
+
+/* Labels and form inputs */
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #8f8c8c;
+}
+
+select, input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+}
+
+/* Submit button styling */
+input[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #16095e;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+input[type="submit"]:hover {
+    background-color: #21108a;
+}
+
+/* Coordinate display styling */
+#coordinates {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1000;
+}
+
+.input-box {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+}
+
+/* General styling for the slider track */
+.range-slider {
+    -webkit-appearance: none; 
+    appearance: none; 
+    width: 100%;
+    height: 13px; 
+    background: #d3d3d3; 
+    border-radius: 5px; 
+    outline: none; 
+    transition: background 0.3s ease; /* Smooth transition for hover or active effects */
+}
+
+/* Styling the track when active */
+.range-slider:hover {
+    background: #a3a3a3; 
+}
+
+/* Customizing the thumb (draggable button) */
+.range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; 
+    appearance: none; 
+    width: 20px; 
+    height: 20px; 
+    background: #291888; 
+    border-radius: 50%; 
+    cursor: pointer; 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+    transition: background 0.3s ease; 
+}
+
+/* Change thumb color when hovered */
+.range-slider::-webkit-slider-thumb:hover {
+    background: #3e3e41; 
+}
+
+/* Styling the track for Firefox */
+.range-slider::-moz-range-track {
+    background: #d3d3d3; 
+    border-radius: 5px;
+    height: 8px;
+}
+
+/* Custom thumb for Firefox */
+.range-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #291888;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Styling the track for Edge/IE */
+.range-slider::-ms-track {
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+    height: 8px;
+}
+
+.range-slider::-ms-thumb {
+    width: 20px;
+    height: 20px;
+    background: #291888;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Active states for track */
+.range-slider:active::-webkit-slider-thumb {
+    background: #2604ec; /* Thumb color when active */
+}
+
+.leaflet-control-locate {
+    margin-bottom: 10px !important; /* Moves the button UP above the zoom controls */
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    display: none;
+    border-radius: 4px;
+}
+
+.autocomplete-suggestions div {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.autocomplete-suggestions div:hover {
+    background: #f0f0f0;
+}
+
+#origin-suggestions, #destination-suggestions {
+    left: 0;
+    top: 100%; /* Positions suggestions directly below the input */
+}
+
+/* Hide default checkbox */
+.custom-checkbox input {
+    display: none;
+}
+
+/* Styled checkbox label */
+.custom-checkbox {
+    display: inline-flex; /* Fixes full-width issue */
+    align-items: center;
+    justify-content: center;
+    background-color: #3a1ff4; /* Purple background */
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 25px; /* Rounded */
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+    font-size: 16px;
+    width: auto; /* Ensure it does not take full width */
+    max-width: 250px; /* Set a reasonable max-width */
+}
+
+/* Checkmark inside */
+.custom-checkbox .checkmark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin-right: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    visibility: hidden; /* Hide checkmark initially */
+}
+
+/* When checked, change color & show checkmark */
+.custom-checkbox input:checked + .checkmark {
+    visibility: visible;
+    background-color: white;
+    color: #3a1ff4; /* Purple checkmark */
+}
